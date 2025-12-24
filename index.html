@@ -1,0 +1,3244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة عمليات الساحات الخارجية والمواصلات - LOCC</title>
+    <style>
+        /* ═══════════════ المتغيرات الأساسية ═══════════════ */
+        :root {
+            --primary: #ffd700;
+            --bg-dark: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --bg-input: #2a2a2a;
+            --green: #4caf50;
+            --blue: #2196f3;
+            --red: #f44336;
+            --orange: #ff9800;
+            --purple: #9c27b0;
+            --cyan: #00bcd4;
+            --text: #fff;
+            --text-muted: #888;
+            --panel-width: 320px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow-x: hidden; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* ═══════════════ شريط التمرير ═══════════════ */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+        /* ═══════════════ الرأسية ═══════════════ */
+        .header {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+            padding: 10px 20px;
+            border-bottom: 3px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-shadow: 0 0 15px rgba(255,215,0,0.5);
+        }
+
+        .header-company {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 10px var(--primary);
+            border: 2px solid var(--primary);
+            padding: 5px 20px;
+            border-radius: 8px;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 10px;
+        }
+
+        .info-box {
+            background: rgba(255,215,0,0.1);
+            border: 2px solid var(--primary);
+            padding: 8px 15px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .info-box-label { font-size: 0.7rem; color: var(--text-muted); }
+        .info-box-value { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+
+        /* ═══════════════ أشرطة الإحصائيات ═══════════════ */
+        .stats-bar {
+            background: var(--bg-card);
+            padding: 5px 10px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            border-bottom: 2px solid rgba(255,215,0,0.3);
+        }
+
+        .stats-bar-title {
+            width: 100%;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--primary);
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+
+        .stat-card {
+            background: rgba(255,215,0,0.05);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 4px 10px;
+            text-align: center;
+            min-width: 70px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,215,0,0.1), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255,215,0,0.3);
+        }
+
+        .stat-card.green { border-color: var(--green); }
+        .stat-card.blue { border-color: var(--blue); }
+        .stat-card.red { border-color: var(--red); animation: pulse-red 1s infinite; }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 5px var(--red); }
+            50% { box-shadow: 0 0 25px var(--red), 0 0 50px var(--red); }
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card.green .stat-value { color: var(--green); }
+        .stat-card.blue .stat-value { color: var(--blue); }
+        .stat-card.red .stat-value { color: var(--red); }
+
+        .stat-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ═══════════════ شريط التأشيرات ═══════════════ */
+        .visa-bar {
+            background: rgba(0,0,0,0.3);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+        }
+
+        .visa-card {
+            background: var(--bg-input);
+            border: 1px solid rgba(255,215,0,0.5);
+            border-radius: 6px;
+            padding: 6px 12px;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .visa-card-title { font-size: 0.7rem; color: var(--primary); }
+        .visa-card-value { font-size: 1rem; font-weight: 700; color: #fff; }
+
+        /* ═══════════════ شريط الإحصائيات الموحد ═══════════════ */
+        .unified-stats-bar {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+            padding: 5px 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+        }
+
+        .stats-divider {
+            width: 2px;
+            height: 30px;
+            background: var(--primary);
+            margin: 0 8px;
+            opacity: 0.5;
+        }
+
+        .mini-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mini-stat:hover {
+            transform: scale(1.05);
+        }
+
+        .mini-stat:hover .mini-box {
+            background: rgba(255,215,0,0.15);
+        }
+
+        .mini-stat.green .mini-box { border-color: var(--green); }
+        .mini-stat.blue .mini-box { border-color: var(--blue); }
+        .mini-stat.red .mini-box { border-color: var(--red); }
+
+        .mini-box {
+            background: rgba(255,215,0,0.05);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 4px;
+            padding: 3px 8px;
+            min-width: 35px;
+            text-align: center;
+        }
+
+        .mini-value {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+
+        .mini-stat.green .mini-value { color: var(--green); }
+        .mini-stat.blue .mini-value { color: var(--blue); }
+        .mini-stat.red .mini-value { color: var(--red); }
+
+        .mini-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.2;
+            margin-bottom: 2px;
+        }
+
+        /* ═══════════════ الحاوية الرئيسية ═══════════════ */
+        .main-container {
+            display: flex;
+            min-height: calc(100vh - 180px);
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        /* ═══════════════ حاوية المواقف الأفقية ═══════════════ */
+        .parking-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* ═══════════════ منطقة المواقف ═══════════════ */
+        .parking-section {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--primary);
+            padding: 10px;
+            background: rgba(255,215,0,0.1);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+
+        .parking-grid {
+            display: grid;
+            grid-template-columns: repeat(14, 1fr);
+            gap: 6px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+
+        .parking-grid.exit-grid {
+            grid-template-columns: repeat(15, 1fr);
+        }
+
+        .parking-spot {
+            aspect-ratio: 3/4;
+            min-height: 80px;
+            background: var(--bg-input);
+            border: 3px solid #444;
+            border-radius: 8px;
+            padding: 5px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .parking-spot:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 25px rgba(255,215,0,0.6);
+            z-index: 10;
+        }
+
+        .parking-spot.early {
+            background: linear-gradient(135deg, #1b5e20, #2e7d32);
+            border-color: var(--green);
+            box-shadow: 0 0 15px rgba(76,175,80,0.5);
+        }
+
+        .parking-spot.ontime {
+            background: linear-gradient(135deg, #0d47a1, #1565c0);
+            border-color: var(--blue);
+            box-shadow: 0 0 15px rgba(33,150,243,0.5);
+        }
+
+        .parking-spot.late {
+            background: linear-gradient(135deg, #b71c1c, #d32f2f);
+            border-color: var(--red);
+            animation: spot-pulse 0.6s infinite;
+        }
+
+        @keyframes spot-pulse {
+            0%, 100% { box-shadow: 0 0 15px var(--red); transform: scale(1); }
+            50% { box-shadow: 0 0 40px var(--red), 0 0 60px rgba(244,67,54,0.5); transform: scale(1.02); }
+        }
+
+        .parking-spot.empty {
+            background: rgba(30,30,30,0.6);
+            border-color: #333;
+            opacity: 0.5;
+        }
+
+        .parking-spot.empty:hover { opacity: 0.8; }
+
+        .spot-number {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            background: rgba(0,0,0,0.8);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        .spot-badge {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .spot-badge.early { background: var(--green); }
+        .spot-badge.ontime { background: var(--blue); }
+        .spot-badge.late { background: var(--red); }
+
+        .bus-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            margin-top: 18px;
+            font-size: 0.6rem;
+            color: #fff;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .info-icon { font-size: 0.7rem; }
+
+        .countdown {
+            text-align: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 3px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 4px;
+            margin-top: auto;
+        }
+
+        .empty-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #444;
+            font-size: 1.5rem;
+        }
+
+        /* ═══════════════ قسم البوابات ═══════════════ */
+        .gates-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+        }
+
+        .gates-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .gate-box {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .gate-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .gate-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* ═══════════════ لوحة التحكم الجانبية ═══════════════ */
+        .control-panel {
+            width: var(--panel-width);
+            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+            border-right: 3px solid var(--primary);
+            padding: 15px;
+            overflow-y: auto;
+            transition: all 0.3s;
+        }
+
+        .control-panel.hidden {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .panel-section {
+            background: rgba(255,215,0,0.03);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .panel-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .panel-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 0.85rem;
+        }
+
+        .panel-stat-value { color: var(--primary); font-weight: 700; }
+
+        .panel-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .panel-btn.primary {
+            background: linear-gradient(135deg, var(--primary), #ffed4e);
+            color: #000;
+        }
+
+        .panel-btn.success {
+            background: linear-gradient(135deg, var(--green), #81c784);
+            color: #fff;
+        }
+
+        .panel-btn.danger {
+            background: linear-gradient(135deg, var(--red), #e57373);
+            color: #fff;
+        }
+
+        .panel-btn.info {
+            background: linear-gradient(135deg, var(--blue), #64b5f6);
+            color: #fff;
+        }
+
+        .panel-btn.warning {
+            background: linear-gradient(135deg, #ff9800, #ffb74d);
+            color: #000;
+        }
+
+        .panel-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255,215,0,0.4);
+        }
+
+        /* ═══════════════ تبويبات لوحة التحكم ═══════════════ */
+        .panel-tabs {
+            display: flex;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            border: 1px solid var(--primary);
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 8px 4px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+        }
+
+        .panel-tab:hover {
+            background: rgba(255,215,0,0.1);
+            color: var(--primary);
+        }
+
+        .panel-tab.active {
+            background: var(--primary);
+            color: #000;
+            font-weight: 700;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ═══════════════ عناصر الإعدادات ═══════════════ */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,215,0,0.1);
+        }
+
+        .setting-label {
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+
+        .setting-input {
+            width: 80px;
+            padding: 5px;
+            background: var(--bg-input);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            color: var(--primary);
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .setting-toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: var(--bg-input);
+            border-radius: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #444;
+        }
+
+        .setting-toggle.active {
+            background: var(--green);
+            border-color: var(--green);
+        }
+
+        .setting-toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .setting-toggle.active::after {
+            left: 27px;
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 30px;
+            border: 2px solid var(--primary);
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        /* ═══════════════ قائمة التنبيهات ═══════════════ */
+        .alerts-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            padding: 8px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            border-right: 3px solid;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .alert-item.critical { border-color: var(--red); background: rgba(244,67,54,0.1); }
+        .alert-item.warning { border-color: var(--orange); background: rgba(255,152,0,0.1); }
+        .alert-item.info { border-color: var(--blue); background: rgba(33,150,243,0.1); }
+        .alert-item.success { border-color: var(--green); background: rgba(76,175,80,0.1); }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .alert-title { font-weight: 700; }
+        .alert-time { color: var(--text-muted); font-size: 0.65rem; }
+
+        /* ═══════════════ مؤشرات الأداء ═══════════════ */
+        .kpi-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .kpi-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-input);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+
+        .chart-bars {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 80px;
+            padding: 10px 0;
+        }
+
+        .chart-bar {
+            width: 30%;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .chart-bar-label {
+            font-size: 0.6rem;
+            color: var(--text);
+            margin-top: 5px;
+        }
+
+        /* ═══════════════ النماذج ═══════════════ */
+        .form-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .form-item:hover {
+            background: rgba(255,215,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .form-icon {
+            font-size: 1.2rem;
+        }
+
+        .form-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .form-desc {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* ═══════════════ إضافة حافلة ═══════════════ */
+        .add-bus-section {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed var(--primary);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .add-bus-input {
+            width: 100%;
+            padding: 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            color: var(--text);
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .add-bus-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .spot-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .spot-actions .panel-btn {
+            flex: 1;
+            padding: 6px;
+            font-size: 0.75rem;
+        }
+
+        /* ═══════════════ قائمة الحافلات ═══════════════ */
+        .bus-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .bus-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .bus-card:hover {
+            background: rgba(255,215,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .bus-card.early { border-right: 3px solid var(--green); }
+        .bus-card.ontime { border-right: 3px solid var(--blue); }
+        .bus-card.late { border-right: 3px solid var(--red); }
+        .bus-card.completed { border-right: 3px solid var(--green); background: rgba(76,175,80,0.1); }
+
+        .bus-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .bus-card-plate {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        .bus-card-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+        }
+
+        .bus-card-badge.early { background: var(--green); color: #fff; }
+        .bus-card-badge.ontime { background: var(--blue); color: #fff; }
+        .bus-card-badge.late { background: var(--red); color: #fff; }
+        .bus-card-badge.completed { background: var(--green); color: #fff; }
+
+        .bus-card-info {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .bus-card-progress {
+            height: 4px;
+            background: var(--bg-input);
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .bus-card-progress-fill {
+            height: 100%;
+            background: var(--green);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        .forms-badges {
+            display: flex;
+            gap: 3px;
+            margin-top: 5px;
+        }
+
+        .form-badge {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem;
+            background: var(--bg-input);
+            color: var(--text-muted);
+        }
+
+        .form-badge.completed { background: var(--green); color: #fff; }
+        .form-badge.pending { background: var(--orange); color: #fff; }
+
+        /* ═══════════════ النافذة المنبثقة ═══════════════ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(255,215,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 2px solid var(--primary);
+            background: rgba(255,215,0,0.1);
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover { color: var(--red); }
+
+        .modal-body {
+            padding: 15px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            border-top: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .modal-footer .panel-btn { margin-top: 0; }
+
+        /* ═══════════════ حقول النموذج ═══════════════ */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--primary);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-label.required::after {
+            content: ' *';
+            color: var(--red);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-input);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(255,215,0,0.3);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-input);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-row .form-group { flex: 1; }
+
+        /* ═══════════════ قائمة اختيار النماذج ═══════════════ */
+        .forms-menu {
+            position: fixed;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 10px;
+            width: 220px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            z-index: 2500;
+            display: none;
+        }
+
+        .forms-menu.active { display: block; }
+
+        .forms-menu-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            padding: 5px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .forms-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .forms-menu-item:hover {
+            background: rgba(255,215,0,0.1);
+        }
+
+        .forms-menu-item-icon { font-size: 1.2rem; }
+        .forms-menu-item-name { font-size: 0.8rem; flex: 1; }
+        .forms-menu-item-status { font-size: 0.8rem; }
+
+        /* ═══════════════ قسم البوابات المتقدم ═══════════════ */
+        .gates-advanced {
+            margin-top: 20px;
+        }
+
+        .gate-section {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .gate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(255,215,0,0.1);
+            border-bottom: 1px solid var(--primary);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .gate-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .gate-stats-mini {
+            display: flex;
+            gap: 10px;
+            font-size: 0.75rem;
+        }
+
+        .gate-stats-mini span { padding: 2px 6px; border-radius: 4px; }
+        .gate-stats-mini .early { background: var(--green); }
+        .gate-stats-mini .ontime { background: var(--blue); }
+        .gate-stats-mini .late { background: var(--red); }
+
+        .gate-buses-list {
+            padding: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .gate-bus-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .gate-bus-card:hover {
+            background: rgba(255,215,0,0.1);
+            transform: translateX(-5px);
+        }
+
+        .gate-bus-card.early { border-right: 3px solid var(--green); }
+        .gate-bus-card.ontime { border-right: 3px solid var(--blue); }
+        .gate-bus-card.late { border-right: 3px solid var(--red); animation: pulse-red 0.7s infinite; }
+
+        /* ═══════════════ زر التبديل ═══════════════ */
+        .toggle-btn {
+            position: fixed;
+            top: 120px;
+            left: var(--panel-width);
+            background: var(--primary);
+            color: #000;
+            padding: 15px 8px;
+            cursor: pointer;
+            z-index: 1001;
+            border-radius: 0 8px 8px 0;
+            font-weight: 700;
+            writing-mode: vertical-rl;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+            border: none;
+        }
+
+        .toggle-btn:hover { padding-left: 15px; }
+        .toggle-btn.shifted { left: 0; }
+
+        /* ═══════════════ زر ملء الشاشة ═══════════════ */
+        .fullscreen-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            z-index: 999;
+            transition: all 0.3s;
+        }
+
+        .fullscreen-btn:hover { transform: scale(1.1); }
+
+        /* ═══════════════ مفتاح الألوان ═══════════════ */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-color.green { background: var(--green); }
+        .legend-color.blue { background: var(--blue); }
+        .legend-color.red { background: var(--red); }
+        .legend-color.empty { background: #333; border: 1px solid #555; }
+
+        /* ═══════════════ التذييل ═══════════════ */
+        .footer {
+            background: linear-gradient(180deg, #1a1a1a, #0a0a0a);
+            border-top: 3px solid var(--primary);
+            padding: 10px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+
+        /* ═══════════════ نافذة المعلومات ═══════════════ */
+        .tooltip {
+            position: fixed;
+            background: rgba(0,0,0,0.95);
+            border: 2px solid var(--primary);
+            padding: 12px;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 2000;
+            display: none;
+            min-width: 200px;
+            box-shadow: 0 10px 40px rgba(255,215,0,0.3);
+        }
+
+        .tooltip-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--primary);
+        }
+
+        .tooltip-row {
+            font-size: 0.8rem;
+            margin: 4px 0;
+        }
+
+        /* ═══════════════ الإشعارات ═══════════════ */
+        .notifications {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .notification {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            animation: slideIn 0.4s ease;
+            border-right: 4px solid;
+            backdrop-filter: blur(10px);
+            min-width: 280px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.success { background: rgba(76,175,80,0.2); border-color: var(--green); }
+        .notification.warning { background: rgba(255,152,0,0.2); border-color: var(--orange); }
+        .notification.error { background: rgba(244,67,54,0.2); border-color: var(--red); }
+        .notification.info { background: rgba(33,150,243,0.2); border-color: var(--blue); }
+
+        /* ═══════════════ التجاوب ═══════════════ */
+        @media (max-width: 1200px) {
+            .parking-grid { grid-template-columns: repeat(7, 1fr); }
+            .parking-grid.exit-grid { grid-template-columns: repeat(9, 1fr); }
+            .gates-grid { grid-template-columns: repeat(5, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: column; text-align: center; }
+            .control-panel { width: 100%; position: fixed; bottom: 0; height: 50vh; }
+            .parking-grid { grid-template-columns: repeat(4, 1fr); }
+            .parking-grid.exit-grid { grid-template-columns: repeat(5, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <!-- زر التبديل -->
+    <button class="toggle-btn" id="toggleBtn" onclick="togglePanel()">التحكم</button>
+
+    <!-- زر ملء الشاشة -->
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ ملء الشاشة</button>
+
+    <!-- الرأسية -->
+    <header class="header">
+        <div class="header-title">إدارة عمليات الساحات الخارجية والمواصلات</div>
+        <div class="header-company">JEDCO</div>
+        <div class="header-info">
+            <div class="info-box">
+                <div class="info-box-label">الوقت</div>
+                <div class="info-box-value" id="currentTime">--:--:--</div>
+            </div>
+            <div class="info-box" id="shiftBox">
+                <div class="info-box-label">النوبة</div>
+                <div class="info-box-value" id="currentShift">-</div>
+            </div>
+            <div class="info-box">
+                <div class="info-box-label">التاريخ</div>
+                <div class="info-box-value" id="currentDate">----/--/--</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- شريط الإحصائيات الموحد -->
+    <div class="unified-stats-bar">
+        <!-- الإحصائيات الحالية -->
+        <div class="stats-group">
+            <div class="mini-stat" onclick="filterBuses('all')"><span class="mini-label">الحافلات</span><div class="mini-box"><span class="mini-value" id="totalBuses">0</span></div></div>
+            <div class="mini-stat green" onclick="filterBuses('early')"><span class="mini-label">مبكر</span><div class="mini-box"><span class="mini-value" id="earlyBuses">0</span></div></div>
+            <div class="mini-stat blue" onclick="filterBuses('ontime')"><span class="mini-label">موعد</span><div class="mini-box"><span class="mini-value" id="ontimeBuses">0</span></div></div>
+            <div class="mini-stat red" onclick="filterBuses('late')"><span class="mini-label">متأخر</span><div class="mini-box"><span class="mini-value" id="lateBuses">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">ركاب</span><div class="mini-box"><span class="mini-value" id="totalPax">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">رحلات</span><div class="mini-box"><span class="mini-value" id="totalFlights">0</span></div></div>
+        </div>
+        <div class="stats-divider"></div>
+        <!-- إحصائيات اليوم -->
+        <div class="stats-group">
+            <div class="mini-stat"><span class="mini-label">اليوم</span><div class="mini-box"><span class="mini-value" id="dailyBuses">0</span></div></div>
+            <div class="mini-stat green"><span class="mini-label">مبكر</span><div class="mini-box"><span class="mini-value" id="dailyEarly">0</span></div></div>
+            <div class="mini-stat blue"><span class="mini-label">موعد</span><div class="mini-box"><span class="mini-value" id="dailyOntime">0</span></div></div>
+            <div class="mini-stat red"><span class="mini-label">متأخر</span><div class="mini-box"><span class="mini-value" id="dailyLate">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">ركاب</span><div class="mini-box"><span class="mini-value" id="dailyPax">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">رحلات</span><div class="mini-box"><span class="mini-value" id="dailyFlights">0</span></div></div>
+        </div>
+        <div class="stats-divider"></div>
+        <!-- حافلات التأشيرات -->
+        <div class="stats-group">
+            <div class="mini-stat"><span class="mini-label">حج</span><div class="mini-box"><span class="mini-value" id="visaHajj">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">عمرة</span><div class="mini-box"><span class="mini-value" id="visaUmrah">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">زيارة</span><div class="mini-box"><span class="mini-value" id="visaVisit">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">سياحة</span><div class="mini-box"><span class="mini-value" id="visaTourism">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">خليجي</span><div class="mini-box"><span class="mini-value" id="visaGCC">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">عمل</span><div class="mini-box"><span class="mini-value" id="visaWork">0</span></div></div>
+        </div>
+        <div class="stats-divider"></div>
+        <!-- ركاب التأشيرات -->
+        <div class="stats-group">
+            <div class="mini-stat"><span class="mini-label">ركاب حج</span><div class="mini-box"><span class="mini-value" id="visaPaxHajj">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">ركاب عمرة</span><div class="mini-box"><span class="mini-value" id="visaPaxUmrah">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">ركاب زيارة</span><div class="mini-box"><span class="mini-value" id="visaPaxVisit">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">ركاب سياحة</span><div class="mini-box"><span class="mini-value" id="visaPaxTourism">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">ركاب خليجي</span><div class="mini-box"><span class="mini-value" id="visaPaxGCC">0</span></div></div>
+            <div class="mini-stat"><span class="mini-label">ركاب عمل</span><div class="mini-box"><span class="mini-value" id="visaPaxWork">0</span></div></div>
+        </div>
+    </div>
+
+    <!-- مفتاح الألوان -->
+    <div class="legend">
+        <div class="legend-item"><div class="legend-color green"></div><span>مبكر (> 7 ساعات)</span></div>
+        <div class="legend-item"><div class="legend-color blue"></div><span>في الموعد (3-7 ساعات)</span></div>
+        <div class="legend-item"><div class="legend-color red"></div><span>متأخر (< 3 ساعات)</span></div>
+        <div class="legend-item"><div class="legend-color empty"></div><span>فارغ</span></div>
+    </div>
+
+    <!-- الحاوية الرئيسية -->
+    <div class="main-container">
+        <!-- منطقة المحتوى -->
+        <div class="content-area">
+            <!-- حاوية المواقف الأفقية -->
+            <div class="parking-container">
+                <!-- جهة المدخل -->
+                <div class="parking-section">
+                    <div class="section-title">جهة المدخل (42 موقف)</div>
+                    <div class="parking-grid" id="entranceGrid"></div>
+                </div>
+
+                <!-- جهة المخرج -->
+                <div class="parking-section">
+                    <div class="section-title">جهة المخرج (45 موقف)</div>
+                    <div class="parking-grid exit-grid" id="exitGrid"></div>
+                </div>
+            </div>
+
+            <!-- قسم البوابات -->
+            <div class="gates-section">
+                <div class="section-title">بوابات صالة المغادرة</div>
+                <div class="gates-grid" id="gatesGrid"></div>
+            </div>
+        </div>
+
+        <!-- لوحة التحكم -->
+        <div class="control-panel" id="controlPanel">
+            <!-- التبويبات -->
+            <div class="panel-tabs">
+                <button class="panel-tab active" onclick="showTab('main')" title="الرئيسية">رئيسية</button>
+                <button class="panel-tab" onclick="showTab('settings')" title="الإعدادات">إعدادات</button>
+                <button class="panel-tab" onclick="showTab('alerts')" title="التنبيهات">تنبيهات</button>
+                <button class="panel-tab" onclick="showTab('kpis')" title="المؤشرات">مؤشرات</button>
+                <button class="panel-tab" onclick="showTab('forms')" title="النماذج">نماذج</button>
+                <button class="panel-tab" onclick="showTab('registered')" title="المسجلة">مسجلة</button>
+                <button class="panel-tab" onclick="showTab('segregation')" title="الفرز">فرز</button>
+                <button class="panel-tab" onclick="showTab('departed')" title="غادرت">غادرت</button>
+            </div>
+
+            <!-- Tab 1: الرئيسية -->
+            <div class="tab-content active" id="tab-main">
+                <div class="panel-section">
+                    <div class="panel-title">الإحصائيات</div>
+                    <div class="panel-stat"><span>المواقف:</span><span class="panel-stat-value">87</span></div>
+                    <div class="panel-stat"><span>مشغول:</span><span class="panel-stat-value" id="panelOccupied">0</span></div>
+                    <div class="panel-stat"><span>فارغ:</span><span class="panel-stat-value" id="panelEmpty">87</span></div>
+                    <div class="panel-stat"><span>مبكر:</span><span class="panel-stat-value" style="color:var(--green)" id="panelEarly">0</span></div>
+                    <div class="panel-stat"><span>موعد:</span><span class="panel-stat-value" style="color:var(--blue)" id="panelOntime">0</span></div>
+                    <div class="panel-stat"><span>متأخر:</span><span class="panel-stat-value" style="color:var(--red)" id="panelLate">0</span></div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">التكبير</div>
+                    <div style="display:flex;gap:5px;">
+                        <button class="panel-btn primary" onclick="zoomOut()" style="flex:1">➖</button>
+                        <button class="panel-btn primary" onclick="zoomReset()" style="flex:1" id="zoomLevel">100%</button>
+                        <button class="panel-btn primary" onclick="zoomIn()" style="flex:1">➕</button>
+                    </div>
+                    <input type="range" min="50" max="150" value="100" style="width:100%;margin-top:8px;" onchange="setZoom(this.value)" id="zoomSlider">
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">التحرير</div>
+                    <button class="panel-btn success" onclick="toggleEditMode()" id="editBtn">تفعيل وضع التحرير</button>
+                    
+                    <div class="add-bus-section">
+                        <div style="font-size:0.8rem;color:var(--primary);margin-bottom:8px;">إضافة حافلة جديدة</div>
+                        <input type="number" class="add-bus-input" placeholder="رقم الموقف (1-87)" id="newSpotNumber" min="1" max="87">
+                        <button class="panel-btn primary" onclick="addNewBus()">إضافة حافلة جديدة</button>
+                    </div>
+
+                    <div id="spotActions" style="display:none;margin-top:10px;">
+                        <div style="font-size:0.8rem;color:var(--primary);margin-bottom:8px;">الموقف المحدد: <span id="selectedSpotNum">-</span></div>
+                        <div class="spot-actions">
+                            <button class="panel-btn info" onclick="editSpot()">تعديل</button>
+                            <button class="panel-btn primary" onclick="moveSpot()">نقل</button>
+                            <button class="panel-btn danger" onclick="deleteSpot()">حذف</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">البيانات</div>
+                    <button class="panel-btn primary" onclick="exportJSON()">تصدير JSON</button>
+                    <button class="panel-btn info" onclick="exportCSV()">تصدير CSV</button>
+                    <button class="panel-btn primary" onclick="document.getElementById('importFile').click()">استيراد</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+                    <button class="panel-btn danger" onclick="resetAll()">مسح الكل</button>
+                    <button class="panel-btn warning" onclick="clearAllData()">تصفير البيانات</button>
+                    <button class="panel-btn" style="background:linear-gradient(135deg,#9c27b0,#ba68c8);" onclick="loadTestData()">تحميل 20 حافلة تجريبية</button>
+                </div>
+            </div>
+
+            <!-- Tab 2: الإعدادات -->
+            <div class="tab-content" id="tab-settings">
+                <div class="panel-section">
+                    <div class="panel-title">إعدادات الوقت</div>
+                    <div class="setting-row">
+                        <span class="setting-label">حد المبكر (ساعة)</span>
+                        <input type="number" class="setting-input" value="7" min="1" max="24" id="earlyThreshold" onchange="updateThresholds()">
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">حد المتأخر (ساعة)</span>
+                        <input type="number" class="setting-input" value="3" min="1" max="12" id="lateThreshold" onchange="updateThresholds()">
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">إعدادات الألوان</div>
+                    <div class="setting-row">
+                        <span class="setting-label">اللون الأساسي</span>
+                        <input type="color" class="color-picker" value="#ffd700" id="colorPrimary" onchange="updateColors()">
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">لون المبكر</span>
+                        <input type="color" class="color-picker" value="#4caf50" id="colorEarly" onchange="updateColors()">
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">لون في الموعد</span>
+                        <input type="color" class="color-picker" value="#2196f3" id="colorOntime" onchange="updateColors()">
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">لون المتأخر</span>
+                        <input type="color" class="color-picker" value="#f44336" id="colorLate" onchange="updateColors()">
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">إعدادات التنبيهات</div>
+                    <div class="setting-row">
+                        <span class="setting-label">تفعيل الصوت</span>
+                        <div class="setting-toggle" id="soundToggle" onclick="toggleSetting('sound')"></div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">إشعارات منبثقة</span>
+                        <div class="setting-toggle active" id="notifToggle" onclick="toggleSetting('notif')"></div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">تحديث تلقائي</span>
+                        <div class="setting-toggle active" id="autoRefreshToggle" onclick="toggleSetting('autoRefresh')"></div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">إعدادات العرض</div>
+                    <div class="setting-row">
+                        <span class="setting-label">حجم المواقف (px)</span>
+                        <input type="number" class="setting-input" value="80" min="60" max="120" id="spotSize" onchange="updateSpotSize()">
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <button class="panel-btn success" onclick="saveSettings()">حفظ الإعدادات</button>
+                    <button class="panel-btn primary" onclick="loadSettings()">تحميل الإعدادات</button>
+                    <button class="panel-btn danger" onclick="resetSettings()">إعادة التعيين</button>
+                </div>
+            </div>
+
+            <!-- Tab 3: التنبيهات -->
+            <div class="tab-content" id="tab-alerts">
+                <div class="panel-section">
+                    <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>التنبيهات النشطة (<span id="alertsCount">0</span>)</span>
+                    </div>
+                    <div style="display:flex;gap:5px;margin-bottom:10px;">
+                        <button class="panel-btn danger" onclick="clearAlerts()" style="flex:1;padding:6px;font-size:0.75rem;">مسح</button>
+                        <button class="panel-btn info" onclick="testAlert()" style="flex:1;padding:6px;font-size:0.75rem;">اختبار</button>
+                    </div>
+                    <div class="alerts-list" id="alertsList">
+                        <div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد تنبيهات</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: مؤشرات الأداء -->
+            <div class="tab-content" id="tab-kpis">
+                <div class="panel-section">
+                    <div class="panel-title">مؤشرات الأداء</div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpiOccupancy">0%</div>
+                        <div class="kpi-label">نسبة الإشغال</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="occupancyBar" style="width:0%;background:var(--blue);"></div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpiAvgWait">0</div>
+                        <div class="kpi-label">متوسط وقت الانتظار (دقيقة)</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-label" style="margin-bottom:5px;">توزيع الحالات</div>
+                        <div class="chart-bars">
+                            <div class="chart-bar" id="barEarly" style="height:30%;background:var(--green);">
+                                <span class="chart-bar-label">مبكر</span>
+                            </div>
+                            <div class="chart-bar" id="barOntime" style="height:40%;background:var(--blue);">
+                                <span class="chart-bar-label">موعد</span>
+                            </div>
+                            <div class="chart-bar" id="barLate" style="height:30%;background:var(--red);">
+                                <span class="chart-bar-label">متأخر</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpiOnTimeRate">0%</div>
+                        <div class="kpi-label">معدل التفويج بالموعد</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="onTimeBar" style="width:0%;background:var(--green);"></div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpiAvgPax">0</div>
+                        <div class="kpi-label">متوسط الركاب/حافلة</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpiPeakOccupancy">0%</div>
+                        <div class="kpi-label">ذروة الإشغال اليوم</div>
+                    </div>
+
+                    <div style="display:flex;gap:8px;">
+                        <div class="kpi-card" style="flex:1;">
+                            <div class="kpi-value" id="kpiBusesToday">0</div>
+                            <div class="kpi-label">حافلات اليوم</div>
+                        </div>
+                        <div class="kpi-card" style="flex:1;">
+                            <div class="kpi-value" id="kpiPaxToday">0</div>
+                            <div class="kpi-label">مسافرين اليوم</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: النماذج -->
+            <div class="tab-content" id="tab-forms">
+                <div class="panel-section">
+                    <div class="panel-title">النماذج المتاحة</div>
+                    <div class="form-list">
+                        <div class="form-item" onclick="openForm('ScrLogIn')">
+                            <span class="form-icon">1</span>
+                            <div>
+                                <div class="form-name">تسجيل الدخول</div>
+                                <div class="form-desc">ScrLogIn - اختيار موقع العمل</div>
+                            </div>
+                        </div>
+                        <div class="form-item" onclick="openForm('ScrSegregationIn')">
+                            <span class="form-icon">2</span>
+                            <div>
+                                <div class="form-name">دخول الفصل</div>
+                                <div class="form-desc">ScrSegregationIn - تسجيل دخول الحافلات</div>
+                            </div>
+                        </div>
+                        <div class="form-item" onclick="openForm('ScrWelcomeLounge')">
+                            <span class="form-icon">3</span>
+                            <div>
+                                <div class="form-name">صالة الانتظار</div>
+                                <div class="form-desc">ScrWelcomeLounge - إدارة المواقف</div>
+                            </div>
+                        </div>
+                        <div class="form-item" onclick="openForm('ScrSegregationExit')">
+                            <span class="form-icon">4</span>
+                            <div>
+                                <div class="form-name">خروج الفصل</div>
+                                <div class="form-desc">ScrSegregationExit - تسجيل الخروج</div>
+                            </div>
+                        </div>
+                        <div class="form-item" onclick="openForm('ScrCurbside')">
+                            <span class="form-icon">5</span>
+                            <div>
+                                <div class="form-name">الرصيف</div>
+                                <div class="form-desc">ScrCurbside - منطقة الصعود</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 6: الحافلات المسجلة -->
+            <div class="tab-content" id="tab-registered">
+                <div class="panel-section">
+                    <div class="panel-title">الحافلات المسجلة (<span id="registeredCount">0</span>)</div>
+                    <div class="bus-list" id="registeredList">
+                        <div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد حافلات مسجلة</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 7: ScrSegregationIn -->
+            <div class="tab-content" id="tab-segregation">
+                <div class="panel-section">
+                    <div class="panel-title">حافلات الفرز (<span id="segregationCount">0</span>)</div>
+                    <div class="bus-list" id="segregationList">
+                        <div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد حافلات في الفرز</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 8: حافلات غادرت -->
+            <div class="tab-content" id="tab-departed">
+                <div class="panel-section">
+                    <div class="panel-title">حافلات غادرت (<span id="departedCount">0</span>)</div>
+                    <div style="display:flex;gap:5px;margin-bottom:10px;">
+                        <div class="kpi-card" style="flex:1;padding:5px;">
+                            <div class="kpi-value" style="font-size:1rem;" id="departedToday">0</div>
+                            <div class="kpi-label">اليوم</div>
+                        </div>
+                        <div class="kpi-card" style="flex:1;padding:5px;">
+                            <div class="kpi-value" style="font-size:1rem;" id="departedPax">0</div>
+                            <div class="kpi-label">الركاب</div>
+                        </div>
+                    </div>
+                    <div class="bus-list" id="departedList">
+                        <div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد حافلات غادرت</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- التذييل -->
+    <footer class="footer">
+        إدارة عمليات الساحات الخارجية والمواصلات v3.0 | LOCC System | آخر تحديث: <span id="lastUpdate">--:--:--</span>
+    </footer>
+
+    <!-- نافذة المعلومات -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- الإشعارات -->
+    <div class="notifications" id="notifications"></div>
+
+    <!-- قائمة اختيار النماذج -->
+    <div class="forms-menu" id="formsMenu">
+        <div class="forms-menu-title">اختر النموذج</div>
+        <div class="forms-menu-item" onclick="selectFormFromMenu('ScrLogIn')">
+            <span class="forms-menu-item-icon">1</span>
+            <span class="forms-menu-item-name">ScrLogIn</span>
+            <span class="forms-menu-item-status" id="formStatus1">-</span>
+        </div>
+        <div class="forms-menu-item" onclick="selectFormFromMenu('ScrSegregationIn')">
+            <span class="forms-menu-item-icon">2</span>
+            <span class="forms-menu-item-name">ScrSegregationIn</span>
+            <span class="forms-menu-item-status" id="formStatus2">-</span>
+        </div>
+        <div class="forms-menu-item" onclick="selectFormFromMenu('ScrWelcomeLounge')">
+            <span class="forms-menu-item-icon">3</span>
+            <span class="forms-menu-item-name">ScrWelcomeLounge</span>
+            <span class="forms-menu-item-status" id="formStatus3">-</span>
+        </div>
+        <div class="forms-menu-item" onclick="selectFormFromMenu('ScrSegregationExit')">
+            <span class="forms-menu-item-icon">4</span>
+            <span class="forms-menu-item-name">ScrSegregationExit</span>
+            <span class="forms-menu-item-status" id="formStatus4">-</span>
+        </div>
+        <div class="forms-menu-item" onclick="selectFormFromMenu('ScrCurbside')">
+            <span class="forms-menu-item-icon">5</span>
+            <span class="forms-menu-item-name">ScrCurbside</span>
+            <span class="forms-menu-item-status" id="formStatus5">-</span>
+        </div>
+    </div>
+
+    <!-- النافذة المنبثقة للنماذج -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal" id="formModal">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitle">النموذج</span>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- محتوى النموذج يُحقن هنا -->
+            </div>
+            <div class="modal-footer">
+                <button class="panel-btn primary" onclick="saveFormData()" style="flex:1;">💾 حفظ</button>
+                <button class="panel-btn danger" onclick="closeModal()" style="flex:1;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════ المتغيرات العامة ═══════════════
+        let busData = [];
+        let busRecords = [];
+        let departedBuses = [];
+        let gateStats = {};
+        let dailyStats = { buses: 0, pax: 0, early: 0, ontime: 0, late: 0, flights: new Set() };
+        let zoomLevel = 100;
+        let editMode = false;
+        let panelVisible = true;
+        let thresholds = { early: 7, late: 3 };
+        let currentSpotForForm = null;
+        let currentBusForForm = null;
+        let currentFormName = null;
+
+        // ═══════════════ البوابات ═══════════════
+        const gates = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'D1', 'D2', 'E1', 'E2'];
+
+        // ═══════════════ تهيئة النظام ═══════════════
+        function init() {
+            loadData();
+            loadSettings();
+            
+            // تحميل بيانات تجريبية إذا لم توجد بيانات
+            if (busData.length === 0) {
+                loadTestData();
+            }
+            
+            // عرض المواقف والبوابات بعد تحميل البيانات
+            renderParkingGrid('entranceGrid', 1, 42);
+            renderParkingGrid('exitGrid', 43, 87);
+            renderGates();
+            updateStats();
+            updateKPIs();
+            updateBusLists();
+            updateTime();
+            
+            setInterval(updateTime, 1000);
+            setInterval(updateCountdowns, 1000);
+            setInterval(saveData, 30000);
+        }
+        
+        // ═══════════════ بيانات تجريبية - 20 حافلة ═══════════════
+        function loadTestData() {
+            const now = new Date();
+            const visaTypes = ['Hajj', 'Umrah', 'Visit', 'Tourism', 'GCC', 'Work'];
+            const terminals = ['HT', 'NT', 'T1'];
+            const gatesArr = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'D1', 'D2', 'E1', 'E2'];
+            
+            // 10 حافلات متأخرة (وقت المغادرة قبل 1-2 ساعة - أقل من 3 ساعات)
+            for (let i = 1; i <= 10; i++) {
+                const hoursAgo = 1 + Math.random() * 2; // 1-3 ساعات مضت
+                const depTime = new Date(now.getTime() - hoursAgo * 60 * 60000);
+                busData.push({
+                    id: Date.now() + i,
+                    plate: `L${1000 + i}SRA`,
+                    busNo: 100 + i,
+                    flight: `SV${1000 + i}`,
+                    pax: 30 + Math.floor(Math.random() * 20),
+                    visa: visaTypes[i % 6],
+                    terminal: terminals[i % 3],
+                    destination: 'مكة المكرمة',
+                    departure: depTime.toISOString(),
+                    arrival: new Date(now.getTime() - 8 * 60 * 60000).toISOString(),
+                    spot: i,
+                    gate: gatesArr[i % 10],
+                    forms: { ScrSegregationIn: {}, ScrWelcomeLounge: {} }
+                });
+                dailyStats.late++;
+            }
+            
+            // 5 حافلات في الموعد (وقت المغادرة بعد 4-6 ساعات - بين 3 و 7 ساعات)
+            for (let i = 11; i <= 15; i++) {
+                const hoursLeft = 4 + Math.random() * 2; // 4-6 ساعات متبقية
+                const depTime = new Date(now.getTime() + hoursLeft * 60 * 60000);
+                busData.push({
+                    id: Date.now() + i,
+                    plate: `O${1000 + i}SRA`,
+                    busNo: 100 + i,
+                    flight: `SV${1000 + i}`,
+                    pax: 30 + Math.floor(Math.random() * 20),
+                    visa: visaTypes[i % 6],
+                    terminal: terminals[i % 3],
+                    destination: 'المدينة المنورة',
+                    departure: depTime.toISOString(),
+                    arrival: new Date(now.getTime() - 4 * 60 * 60000).toISOString(),
+                    spot: i,
+                    gate: gatesArr[i % 10],
+                    forms: { ScrSegregationIn: {}, ScrWelcomeLounge: {} }
+                });
+                dailyStats.ontime++;
+            }
+            
+            // 5 حافلات مبكر (وقت المغادرة بعد 8-12 ساعة - أكثر من 7 ساعات)
+            for (let i = 16; i <= 20; i++) {
+                const hoursLeft = 8 + Math.random() * 4; // 8-12 ساعة متبقية
+                const depTime = new Date(now.getTime() + hoursLeft * 60 * 60000);
+                busData.push({
+                    id: Date.now() + i,
+                    plate: `E${1000 + i}SRA`,
+                    busNo: 100 + i,
+                    flight: `SV${1000 + i}`,
+                    pax: 30 + Math.floor(Math.random() * 20),
+                    visa: visaTypes[i % 6],
+                    terminal: terminals[i % 3],
+                    destination: 'جدة',
+                    departure: depTime.toISOString(),
+                    arrival: new Date(now.getTime() - 2 * 60 * 60000).toISOString(),
+                    spot: i,
+                    gate: gatesArr[i % 10],
+                    forms: { ScrSegregationIn: {}, ScrWelcomeLounge: {} }
+                });
+                dailyStats.early++;
+            }
+            
+            // تحديث الإحصائيات
+            dailyStats.buses = 20;
+            dailyStats.pax = busData.reduce((sum, b) => sum + (b.pax || 0), 0);
+            busData.forEach(b => dailyStats.flights.add(b.flight));
+            
+            // تحديث العرض
+            updateStats();
+            renderParkingGrid('entranceGrid', 1, 42);
+            renderParkingGrid('exitGrid', 43, 87);
+            renderGates();
+            updateKPIs();
+            saveData();
+            
+            showNotification('success', 'بيانات تجريبية', 'تم تحميل 20 حافلة: 10 متأخرة، 5 في الموعد، 5 مبكر');
+        }
+
+        // ═══════════════ عرض شبكة المواقف ═══════════════
+        function renderParkingGrid(containerId, start, end) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            for (let i = start; i <= end; i++) {
+                const spot = document.createElement('div');
+                spot.className = 'parking-spot';
+                spot.dataset.spot = i;
+
+                const bus = busData.find(b => b.spot === i);
+
+                if (bus) {
+                    const status = getStatus(bus.arrival, bus.departure);
+                    spot.classList.add(status.class);
+                    const countdown = getCountdownString(bus.departure);
+
+                    spot.innerHTML = `
+                        <div class="spot-number">#${i}</div>
+                        <div class="spot-badge ${status.class}">${status.label}</div>
+                        <div class="bus-info">
+                            <div class="info-row"><span class="info-icon">B</span>${bus.plate}</div>
+                            <div class="info-row"><span class="info-icon">F</span>${bus.flight}</div>
+                            <div class="info-row"><span class="info-icon">P</span>${bus.pax || '-'}</div>
+                            <div class="info-row"><span class="info-icon">G</span>${bus.gate || '-'}</div>
+                        </div>
+                        <div class="countdown" style="color:${status.color}">⏱️ ${countdown}</div>
+                    `;
+
+                    spot.onmouseenter = (e) => showTooltip(e, bus, status, i);
+                    spot.onmousemove = moveTooltip;
+                    spot.onmouseleave = hideTooltip;
+                } else {
+                    spot.classList.add('empty');
+                    spot.innerHTML = `<div class="spot-number">#${i}</div><div class="empty-text">—</div>`;
+                }
+
+                spot.onclick = (e) => handleSpotClick(i, bus, e);
+                container.appendChild(spot);
+            }
+        }
+
+        // ═══════════════ عرض البوابات المتقدم ═══════════════
+        function renderGates() {
+            const container = document.getElementById('gatesGrid');
+            container.innerHTML = '';
+
+            gates.forEach(gate => {
+                const gateBuses = busData.filter(b => b.gate === gate);
+                let early = 0, ontime = 0, late = 0;
+                
+                gateBuses.forEach(bus => {
+                    const status = getStatus(bus.arrival, bus.departure);
+                    if (status.class === 'early') early++;
+                    else if (status.class === 'ontime') ontime++;
+                    else late++;
+                });
+
+                const gateSection = document.createElement('div');
+                gateSection.className = 'gate-section';
+                gateSection.innerHTML = `
+                    <div class="gate-header">
+                        <span class="gate-title">${gate}</span>
+                        <div class="gate-stats-mini">
+                            <span class="early">${early}</span>
+                            <span class="ontime">${ontime}</span>
+                            <span class="late">${late}</span>
+                        </div>
+                    </div>
+                    <div class="gate-buses-list" id="gateList-${gate}">
+                        ${gateBuses.length === 0 ? 
+                            '<div style="text-align:center;color:var(--text-muted);padding:10px;font-size:0.75rem;">لا توجد حافلات</div>' :
+                            gateBuses.map(bus => {
+                                const status = getStatus(bus.arrival, bus.departure);
+                                const countdown = getCountdownString(bus.departure);
+                                return `
+                                    <div class="gate-bus-card ${status.class}" onclick="showFormsMenu(event, ${bus.spot})">
+                                        <div style="flex:1;">
+                                            <div style="font-weight:700;color:var(--primary);">${bus.plate}</div>
+                                            <div style="font-size:0.7rem;color:var(--text-muted);">${bus.flight} | ${bus.pax || '-'}</div>
+                                        </div>
+                                        <div style="text-align:left;font-size:0.75rem;">
+                                            <div style="color:${status.color};">${countdown}</div>
+                                            <div style="font-size:0.65rem;color:var(--text-muted);">${status.label}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')
+                        }
+                    </div>
+                `;
+                container.appendChild(gateSection);
+            });
+        }
+
+        // ═══════════════ حساب الحالة ═══════════════
+        function getStatus(arrival, departure) {
+            const now = new Date();
+            const dep = new Date(departure);
+            const diff = (dep - now) / (1000 * 60 * 60);
+
+            // التحقق من صحة التاريخ
+            if (isNaN(diff)) {
+                return { class: 'late', label: 'متأخر', color: '#f44336', hours: 0 };
+            }
+
+            if (diff > thresholds.early) {
+                return { class: 'early', label: 'مبكر', color: '#4caf50', hours: diff };
+            } else if (diff >= thresholds.late) {
+                return { class: 'ontime', label: 'موعد', color: '#2196f3', hours: diff };
+            } else {
+                return { class: 'late', label: 'متأخر', color: '#f44336', hours: diff };
+            }
+        }
+
+        // ═══════════════ العداد التنازلي HH:MM:SS ═══════════════
+        function getCountdownString(departure) {
+            if (!departure) return '--:--:--';
+            
+            const now = new Date();
+            const dep = new Date(departure);
+            const diff = dep - now;
+            
+            if (diff <= 0) return '⚠️ متأخر!';
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            return `${hours.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+        }
+
+        // ═══════════════ تحديث الإحصائيات ═══════════════
+        function updateStats() {
+            let early = 0, ontime = 0, late = 0, totalPax = 0;
+            const flights = new Set();
+            const visaCounts = { Hajj: 0, Umrah: 0, Visit: 0, Tourism: 0, GCC: 0, Work: 0 };
+            const visaPaxCounts = { Hajj: 0, Umrah: 0, Visit: 0, Tourism: 0, GCC: 0, Work: 0 };
+
+            busData.forEach(bus => {
+                const status = getStatus(bus.arrival, bus.departure);
+                if (status.class === 'early') early++;
+                else if (status.class === 'ontime') ontime++;
+                else late++;
+
+                totalPax += bus.pax || 0;
+                if (bus.flight) flights.add(bus.flight);
+                if (bus.visa && visaCounts[bus.visa] !== undefined) {
+                    visaCounts[bus.visa]++;
+                    visaPaxCounts[bus.visa] += bus.pax || 0;
+                }
+            });
+
+            document.getElementById('totalBuses').textContent = busData.length;
+            document.getElementById('earlyBuses').textContent = early;
+            document.getElementById('ontimeBuses').textContent = ontime;
+            document.getElementById('lateBuses').textContent = late;
+            document.getElementById('totalPax').textContent = totalPax.toLocaleString();
+            document.getElementById('totalFlights').textContent = flights.size;
+
+            document.getElementById('panelOccupied').textContent = busData.length;
+            document.getElementById('panelEmpty').textContent = 87 - busData.length;
+            document.getElementById('panelEarly').textContent = early;
+            document.getElementById('panelOntime').textContent = ontime;
+            document.getElementById('panelLate').textContent = late;
+
+            // التأشيرات - الحافلات
+            document.getElementById('visaHajj').textContent = visaCounts.Hajj;
+            document.getElementById('visaUmrah').textContent = visaCounts.Umrah;
+            document.getElementById('visaVisit').textContent = visaCounts.Visit;
+            document.getElementById('visaTourism').textContent = visaCounts.Tourism;
+            document.getElementById('visaGCC').textContent = visaCounts.GCC;
+            document.getElementById('visaWork').textContent = visaCounts.Work;
+
+            // التأشيرات - الركاب
+            document.getElementById('visaPaxHajj').textContent = visaPaxCounts.Hajj.toLocaleString();
+            document.getElementById('visaPaxUmrah').textContent = visaPaxCounts.Umrah.toLocaleString();
+            document.getElementById('visaPaxVisit').textContent = visaPaxCounts.Visit.toLocaleString();
+            document.getElementById('visaPaxTourism').textContent = visaPaxCounts.Tourism.toLocaleString();
+            document.getElementById('visaPaxGCC').textContent = visaPaxCounts.GCC.toLocaleString();
+            document.getElementById('visaPaxWork').textContent = visaPaxCounts.Work.toLocaleString();
+
+            // الإحصائيات اليومية
+            document.getElementById('dailyBuses').textContent = dailyStats.buses;
+            document.getElementById('dailyEarly').textContent = dailyStats.early;
+            document.getElementById('dailyOntime').textContent = dailyStats.ontime;
+            document.getElementById('dailyLate').textContent = dailyStats.late;
+            document.getElementById('dailyPax').textContent = dailyStats.pax.toLocaleString();
+            document.getElementById('dailyFlights').textContent = dailyStats.flights.size;
+
+            renderGates();
+            updateBusLists();
+        }
+
+        // ═══════════════ تحديث الوقت ═══════════════
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('ar-SA', { hour12: false });
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('ar-SA');
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('ar-SA', { hour12: false });
+
+            const hour = now.getHours();
+            let shift, shiftColor, shiftBg;
+            
+            if (hour >= 6 && hour < 14) {
+                shift = 'A';
+                shiftColor = '#4caf50';
+                shiftBg = 'rgba(76,175,80,0.2)';
+            } else if (hour >= 14 && hour < 22) {
+                shift = 'B';
+                shiftColor = '#2196f3';
+                shiftBg = 'rgba(33,150,243,0.2)';
+            } else {
+                shift = 'C';
+                shiftColor = '#9c27b0';
+                shiftBg = 'rgba(156,39,176,0.2)';
+            }
+            
+            const shiftBox = document.getElementById('shiftBox');
+            if (shiftBox) {
+                shiftBox.style.borderColor = shiftColor;
+                shiftBox.style.background = shiftBg;
+            }
+            document.getElementById('currentShift').textContent = shift;
+            document.getElementById('currentShift').style.color = shiftColor;
+        }
+
+        // ═══════════════ تحديث العدادات كل ثانية ═══════════════
+        function updateCountdowns() {
+            // تحديث كل موقف مشغول
+            busData.forEach(bus => {
+                if (!bus.spot) return;
+                
+                const spotEl = document.querySelector(`.parking-spot[data-spot="${bus.spot}"]`);
+                if (spotEl && !spotEl.classList.contains('empty')) {
+                    const countdown = getCountdownString(bus.departure);
+                    const status = getStatus(bus.arrival, bus.departure);
+                    const countdownEl = spotEl.querySelector('.countdown');
+                    if (countdownEl) {
+                        countdownEl.innerHTML = '⏱️ ' + countdown;
+                        countdownEl.style.color = status.color;
+                    }
+                    
+                    // تحديث الشارة
+                    const badgeEl = spotEl.querySelector('.spot-badge');
+                    if (badgeEl) {
+                        badgeEl.textContent = status.label;
+                        badgeEl.className = 'spot-badge ' + status.class;
+                    }
+                    
+                    // تحديث لون الموقف
+                    spotEl.classList.remove('early', 'ontime', 'late');
+                    spotEl.classList.add(status.class);
+                }
+            });
+            
+            monitorStatusChanges();
+        }
+
+        // ═══════════════ مراقبة تغيير الحالة التلقائي ═══════════════
+        function monitorStatusChanges() {
+            busData.forEach(bus => {
+                const currentStatus = getStatus(bus.arrival, bus.departure);
+                const previousStatus = bus.previousStatus || currentStatus.class;
+                
+                if (currentStatus.class !== previousStatus) {
+                    // تغيير من مبكر إلى في الموعد
+                    if (previousStatus === 'early' && currentStatus.class === 'ontime') {
+                        showNotification('info', 'تحديث الحالة', `الحافلة ${bus.plate} دخلت مرحلة الموعد المحدد`);
+                        addAlert('info', 'تغيير حالة', `الحافلة ${bus.plate} أصبحت في الموعد`);
+                    }
+                    
+                    // تغيير من في الموعد إلى متأخر
+                    if (previousStatus === 'ontime' && currentStatus.class === 'late') {
+                        showNotification('warning', 'تنبيه تأخير', `الحافلة ${bus.plate} أصبحت متأخرة`);
+                        addAlert('warning', 'حافلة متأخرة', `الحافلة ${bus.plate} تجاوزت الموعد المحدد`);
+                    }
+                    
+                    // متأخر جداً (أقل من ساعة)
+                    if (currentStatus.class === 'late' && currentStatus.hours < 1 && bus.previousHours >= 1) {
+                        showNotification('error', 'حرج', `الحافلة ${bus.plate} متأخرة جداً`);
+                        addAlert('critical', 'حافلة متأخرة جداً', `الحافلة ${bus.plate} متأخرة أقل من ساعة`);
+                        if (settings.sound) playAlertSound();
+                    }
+                    
+                    bus.previousStatus = currentStatus.class;
+                }
+                bus.previousHours = currentStatus.hours;
+            });
+        }
+
+        // ═══════════════ تشغيل صوت التنبيه ═══════════════
+        function playAlertSound() {
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleZlHBSNz0+a2blJMVIHO5Lh6c4Nxfo6SqbLAx8TCvrm0');
+                audio.volume = 0.5;
+                audio.play();
+            } catch(e) { console.log('Sound not available'); }
+        }
+
+        // ═══════════════ نافذة المعلومات ═══════════════
+        function showTooltip(e, bus, status, spot) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+            tooltip.innerHTML = `
+                <div class="tooltip-title">موقف #${spot}</div>
+                <div class="tooltip-row"><b>اللوحة:</b> ${bus.plate}</div>
+                <div class="tooltip-row"><b>الرحلة:</b> ${bus.flight}</div>
+                <div class="tooltip-row"><b>الركاب:</b> ${bus.pax || '-'}</div>
+                <div class="tooltip-row"><b>البوابة:</b> ${bus.gate || '-'}</div>
+                <div class="tooltip-row"><b>المغادرة:</b> ${bus.departure}</div>
+                <div class="tooltip-row"><b>الوقت المتبقي:</b> ${getCountdownString(bus.departure)}</div>
+                <div class="tooltip-row" style="color:${status.color}"><b>الحالة:</b> ${status.label}</div>
+            `;
+            moveTooltip(e);
+        }
+
+        function moveTooltip(e) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.left = (e.pageX + 15) + 'px';
+            tooltip.style.top = (e.pageY + 15) + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        // ═══════════════ التعامل مع النقر ═══════════════
+        function handleSpotClick(spot, bus, e) {
+            if (e) {
+                showFormsMenu(e, spot, bus);
+            } else {
+                if (bus) {
+                    showNotification('info', `موقف #${spot}`, `الحافلة: ${bus.plate}`);
+                } else {
+                    showNotification('info', `موقف #${spot}`, 'الموقف فارغ - انقر للإضافة');
+                }
+            }
+        }
+
+        // ═══════════════ الإشعارات ═══════════════
+        function showNotification(type, title, message) {
+            const container = document.getElementById('notifications');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `<strong>${title}</strong><br>${message}`;
+            container.appendChild(notification);
+
+            setTimeout(() => notification.remove(), 5000);
+        }
+
+        // ═══════════════ التحكم باللوحة ═══════════════
+        function togglePanel() {
+            panelVisible = !panelVisible;
+            const panel = document.getElementById('controlPanel');
+            const btn = document.getElementById('toggleBtn');
+            panel.classList.toggle('hidden', !panelVisible);
+            btn.classList.toggle('shifted', !panelVisible);
+        }
+
+        // ═══════════════ التبويبات ═══════════════
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+            if (tabName === 'kpis') updateKPIs();
+        }
+
+        // ═══════════════ إعدادات الحدود ═══════════════
+        function updateThresholds() {
+            thresholds.early = parseInt(document.getElementById('earlyThreshold').value) || 7;
+            thresholds.late = parseInt(document.getElementById('lateThreshold').value) || 3;
+            updateStats();
+            renderParkingGrid('entranceGrid', 1, 42);
+            renderParkingGrid('exitGrid', 43, 87);
+            showNotification('success', 'الإعدادات', 'تم تحديث حدود الوقت');
+        }
+
+        // ═══════════════ إعدادات الألوان ═══════════════
+        function updateColors() {
+            document.documentElement.style.setProperty('--primary', document.getElementById('colorPrimary').value);
+            document.documentElement.style.setProperty('--green', document.getElementById('colorEarly').value);
+            document.documentElement.style.setProperty('--blue', document.getElementById('colorOntime').value);
+            document.documentElement.style.setProperty('--red', document.getElementById('colorLate').value);
+        }
+
+        // ═══════════════ تبديل الإعدادات ═══════════════
+        let settings = { sound: false, notif: true, autoRefresh: true };
+
+        function toggleSetting(setting) {
+            settings[setting] = !settings[setting];
+            const toggle = document.getElementById(setting + 'Toggle');
+            toggle.classList.toggle('active', settings[setting]);
+            showNotification('info', 'الإعدادات', `${setting}: ${settings[setting] ? 'مفعل' : 'معطل'}`);
+        }
+
+        // ═══════════════ حجم المواقف ═══════════════
+        function updateSpotSize() {
+            const size = document.getElementById('spotSize').value;
+            document.querySelectorAll('.parking-spot').forEach(spot => {
+                spot.style.minHeight = size + 'px';
+            });
+        }
+
+        // ═══════════════ حفظ وتحميل الإعدادات ═══════════════
+        function saveSettings() {
+            const settingsData = {
+                thresholds,
+                settings,
+                colors: {
+                    primary: document.getElementById('colorPrimary').value,
+                    early: document.getElementById('colorEarly').value,
+                    ontime: document.getElementById('colorOntime').value,
+                    late: document.getElementById('colorLate').value
+                },
+                spotSize: document.getElementById('spotSize').value
+            };
+            localStorage.setItem('LOCC_Settings', JSON.stringify(settingsData));
+            showNotification('success', 'الإعدادات', 'تم حفظ الإعدادات بنجاح');
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('LOCC_Settings');
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data.thresholds) {
+                    thresholds = data.thresholds;
+                    document.getElementById('earlyThreshold').value = thresholds.early;
+                    document.getElementById('lateThreshold').value = thresholds.late;
+                }
+                if (data.settings) {
+                    settings = data.settings;
+                    document.getElementById('soundToggle').classList.toggle('active', settings.sound);
+                    document.getElementById('notifToggle').classList.toggle('active', settings.notif);
+                    document.getElementById('autoRefreshToggle').classList.toggle('active', settings.autoRefresh);
+                }
+                if (data.colors) {
+                    document.getElementById('colorPrimary').value = data.colors.primary;
+                    document.getElementById('colorEarly').value = data.colors.early;
+                    document.getElementById('colorOntime').value = data.colors.ontime;
+                    document.getElementById('colorLate').value = data.colors.late;
+                    updateColors();
+                }
+                if (data.spotSize) {
+                    document.getElementById('spotSize').value = data.spotSize;
+                    updateSpotSize();
+                }
+                showNotification('success', 'الإعدادات', 'تم تحميل الإعدادات');
+            }
+        }
+
+        function resetSettings() {
+            if (confirm('هل تريد إعادة تعيين جميع الإعدادات؟')) {
+                localStorage.removeItem('LOCC_Settings');
+                location.reload();
+            }
+        }
+
+        // ═══════════════ التنبيهات ═══════════════
+        let alertsList = [];
+
+        function addAlert(type, title, message) {
+            const alert = {
+                id: Date.now(),
+                type,
+                title,
+                message,
+                time: new Date().toLocaleTimeString('ar-SA', { hour12: false })
+            };
+            alertsList.unshift(alert);
+            if (alertsList.length > 50) alertsList.pop();
+            renderAlerts();
+            if (settings.notif) showNotification(type, title, message);
+        }
+
+        function renderAlerts() {
+            const container = document.getElementById('alertsList');
+            document.getElementById('alertsCount').textContent = alertsList.length;
+            
+            if (alertsList.length === 0) {
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد تنبيهات</div>';
+                return;
+            }
+            
+            container.innerHTML = alertsList.map(a => `
+                <div class="alert-item ${a.type}">
+                    <div class="alert-header">
+                        <span class="alert-title">${a.title}</span>
+                        <span class="alert-time">${a.time}</span>
+                    </div>
+                    <div>${a.message}</div>
+                </div>
+            `).join('');
+        }
+
+        function clearAlerts() {
+            alertsList = [];
+            renderAlerts();
+            showNotification('info', 'التنبيهات', 'تم مسح جميع التنبيهات');
+        }
+
+        function testAlert() {
+            const types = ['critical', 'warning', 'info', 'success'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            addAlert(type, 'تنبيه تجريبي', 'هذا تنبيه تجريبي للاختبار');
+        }
+
+        // ═══════════════ مؤشرات الأداء ═══════════════
+        let peakOccupancy = 0;
+
+        function updateKPIs() {
+            const total = busData.length;
+            const occupancy = Math.round((total / 87) * 100);
+            if (occupancy > peakOccupancy) peakOccupancy = occupancy;
+
+            let early = 0, ontime = 0, late = 0, totalPax = 0;
+            busData.forEach(bus => {
+                const status = getStatus(bus.arrival, bus.departure);
+                if (status.class === 'early') early++;
+                else if (status.class === 'ontime') ontime++;
+                else late++;
+                totalPax += bus.pax || 0;
+            });
+
+            const onTimeRate = total > 0 ? Math.round(((early + ontime) / total) * 100) : 0;
+            const avgPax = total > 0 ? Math.round(totalPax / total) : 0;
+            const avgWait = Math.round(Math.random() * 30 + 10);
+
+            document.getElementById('kpiOccupancy').textContent = occupancy + '%';
+            document.getElementById('occupancyBar').style.width = occupancy + '%';
+            document.getElementById('kpiAvgWait').textContent = avgWait;
+            document.getElementById('kpiOnTimeRate').textContent = onTimeRate + '%';
+            document.getElementById('onTimeBar').style.width = onTimeRate + '%';
+            document.getElementById('onTimeBar').style.background = onTimeRate >= 80 ? 'var(--green)' : onTimeRate >= 50 ? 'var(--orange)' : 'var(--red)';
+            document.getElementById('kpiAvgPax').textContent = avgPax;
+            document.getElementById('kpiPeakOccupancy').textContent = peakOccupancy + '%';
+            document.getElementById('kpiBusesToday').textContent = dailyStats.buses;
+            document.getElementById('kpiPaxToday').textContent = dailyStats.pax.toLocaleString();
+
+            // تحديث الرسم البياني
+            const totalStatus = early + ontime + late || 1;
+            document.getElementById('barEarly').style.height = Math.max((early / totalStatus) * 100, 5) + '%';
+            document.getElementById('barOntime').style.height = Math.max((ontime / totalStatus) * 100, 5) + '%';
+            document.getElementById('barLate').style.height = Math.max((late / totalStatus) * 100, 5) + '%';
+        }
+
+        // ═══════════════ إضافة حافلة جديدة ═══════════════
+        let selectedSpot = null;
+
+        function addNewBus() {
+            const spotNum = parseInt(document.getElementById('newSpotNumber').value);
+            if (!spotNum || spotNum < 1 || spotNum > 87) {
+                showNotification('error', 'خطأ', 'أدخل رقم موقف صحيح (1-87)');
+                return;
+            }
+            if (busData.find(b => b.spot === spotNum)) {
+                showNotification('error', 'خطأ', 'الموقف مشغول بالفعل');
+                return;
+            }
+            openForm('ScrSegregationIn', spotNum);
+        }
+
+        function selectSpot(spotNum, bus) {
+            selectedSpot = { num: spotNum, bus };
+            document.getElementById('spotActions').style.display = 'block';
+            document.getElementById('selectedSpotNum').textContent = spotNum;
+        }
+
+        function editSpot() {
+            if (selectedSpot && selectedSpot.bus) {
+                openForm('ScrSegregationIn', selectedSpot.num);
+            }
+        }
+
+        function moveSpot() {
+            if (selectedSpot && selectedSpot.bus) {
+                const newSpot = prompt('أدخل رقم الموقف الجديد (1-87):');
+                if (newSpot && !busData.find(b => b.spot === parseInt(newSpot))) {
+                    selectedSpot.bus.spot = parseInt(newSpot);
+                    updateStats();
+                    renderParkingGrid('entranceGrid', 1, 42);
+                    renderParkingGrid('exitGrid', 43, 87);
+                    showNotification('success', 'نقل', `تم نقل الحافلة إلى الموقف ${newSpot}`);
+                }
+            }
+        }
+
+        function deleteSpot() {
+            if (selectedSpot && selectedSpot.bus) {
+                if (confirm('هل تريد حذف هذه الحافلة؟')) {
+                    busData = busData.filter(b => b.spot !== selectedSpot.num);
+                    updateStats();
+                    renderParkingGrid('entranceGrid', 1, 42);
+                    renderParkingGrid('exitGrid', 43, 87);
+                    document.getElementById('spotActions').style.display = 'none';
+                    showNotification('warning', 'حذف', 'تم حذف الحافلة');
+                }
+            }
+        }
+
+        // ═══════════════ النماذج ═══════════════
+        function openForm(formName, spotNum = null) {
+            showNotification('info', 'النماذج', `فتح نموذج: ${formName}` + (spotNum ? ` - موقف ${spotNum}` : ''));
+            currentFormName = formName;
+            currentSpotForForm = spotNum;
+            openFormModal(formName);
+        }
+
+        // ═══════════════ قائمة النماذج ═══════════════
+        function showFormsMenu(e, spotNum, bus = null) {
+            e.stopPropagation();
+            const menu = document.getElementById('formsMenu');
+            currentSpotForForm = spotNum;
+            currentBusForForm = bus;
+            
+            // تحديث حالة النماذج
+            updateFormStatusInMenu(bus);
+            
+            // حساب الموقع
+            let x = e.pageX;
+            let y = e.pageY;
+            if (x + 230 > window.innerWidth) x = window.innerWidth - 240;
+            if (y + 300 > window.innerHeight) y = window.innerHeight - 310;
+            
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+            menu.classList.add('active');
+            
+            // إغلاق عند النقر خارجها
+            setTimeout(() => {
+                document.addEventListener('click', closeFormsMenu, { once: true });
+            }, 100);
+        }
+
+        function closeFormsMenu() {
+            document.getElementById('formsMenu').classList.remove('active');
+        }
+
+        function updateFormStatusInMenu(bus) {
+            const forms = ['ScrLogIn', 'ScrSegregationIn', 'ScrWelcomeLounge', 'ScrSegregationExit', 'ScrCurbside'];
+            forms.forEach((form, i) => {
+                const statusEl = document.getElementById('formStatus' + (i + 1));
+                if (bus && bus.forms && bus.forms[form]) {
+                    statusEl.textContent = 'OK';
+                } else {
+                    statusEl.textContent = '⬜';
+                }
+            });
+        }
+
+        function selectFormFromMenu(formName) {
+            closeFormsMenu();
+            currentFormName = formName;
+            openFormModal(formName, currentBusForForm);
+        }
+
+        // ═══════════════ النوافذ المنبثقة ═══════════════
+        function openFormModal(formName, bus = null) {
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+            
+            const formTitles = {
+                'ScrLogIn': 'تسجيل الدخول',
+                'ScrSegregationIn': 'دخول الحافلات للفصل',
+                'ScrWelcomeLounge': 'صالة الترحيب',
+                'ScrSegregationExit': 'خروج الحافلات من الفصل',
+                'ScrCurbside': 'الرصيف'
+            };
+            
+            title.textContent = formTitles[formName] || formName;
+            body.innerHTML = getFormHTML(formName, bus);
+            modal.classList.add('active');
+        }
+
+        function getFormHTML(formName, bus = null) {
+            const data = bus?.forms?.[formName] || {};
+            // تعبئة البيانات من الحافلة إذا لم تكن موجودة في النموذج
+            if (bus) {
+                data.BusPlate = data.BusPlate || bus.plate;
+                data.BusNO = data.BusNO || bus.busNo;
+                data.FlightNo = data.FlightNo || bus.flight;
+                data.PaxCount = data.PaxCount || bus.pax;
+                data.GetaNO = data.GetaNO || bus.gate;
+                data.ParkNO = data.ParkNO || bus.spot;
+            }
+            
+            const forms = {
+                'ScrLogIn': `
+                    <div class="form-group">
+                        <label class="form-label required">موقع العمل</label>
+                        <select class="form-select" id="cmbWorkLoc">
+                            <option value="">اختر...</option>
+                            <option value="ScrLogIn" ${data.cmbWorkLoc === 'ScrLogIn' ? 'selected' : ''}>ScrLogIn</option>
+                            <option value="ScrSegregationIn" ${data.cmbWorkLoc === 'ScrSegregationIn' ? 'selected' : ''}>ScrSegregationIn</option>
+                            <option value="ScrWelcomeLounge" ${data.cmbWorkLoc === 'ScrWelcomeLounge' ? 'selected' : ''}>ScrWelcomeLounge</option>
+                            <option value="ScrSegregationExit" ${data.cmbWorkLoc === 'ScrSegregationExit' ? 'selected' : ''}>ScrSegregationExit</option>
+                            <option value="ScrCurbside" ${data.cmbWorkLoc === 'ScrCurbside' ? 'selected' : ''}>ScrCurbside</option>
+                        </select>
+                    </div>
+                `,
+                'ScrSegregationIn': `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">BusPlate</label>
+                            <input type="text" class="form-input" id="BusPlate" value="${data.BusPlate || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">BusNO</label>
+                            <input type="number" class="form-input" id="BusNO" value="${data.BusNO || ''}">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">TripCount</label>
+                            <input type="number" class="form-input" id="TripCount" value="${data.TripCount || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">DepTime</label>
+                            <input type="datetime-local" class="form-input" id="DepTime" value="${data.DepTime || ''}" step="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">FlightNo</label>
+                            <input type="text" class="form-input" id="FlightNo" value="${data.FlightNo || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CurDT</label>
+                            <input type="datetime-local" class="form-input" id="CurDT" value="${data.CurDT || new Date().toISOString().slice(0,16)}" step="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">TerminalCd</label>
+                            <select class="form-select" id="TerminalCd">
+                                <option value="">اختر...</option>
+                                <option value="HT" ${data.TerminalCd === 'HT' ? 'selected' : ''}>HT</option>
+                                <option value="NT" ${data.TerminalCd === 'NT' ? 'selected' : ''}>NT</option>
+                                <option value="T1" ${data.TerminalCd === 'T1' ? 'selected' : ''}>T1</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">TotalPax</label>
+                            <input type="text" class="form-input" id="TotalPax" value="${data.TotalPax || ''}">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">PaxCount</label>
+                            <input type="number" class="form-input" id="PaxCount" value="${data.PaxCount || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Destination</label>
+                            <input type="text" class="form-input" id="Destination" value="${data.Destination || ''}">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">DispatchSts</label>
+                            <select class="form-select" id="DispatchSts">
+                                <option value="">اختر...</option>
+                                <option value="خاطئ" ${data.DispatchSts === 'خاطئ' ? 'selected' : ''}>خاطئ</option>
+                                <option value="مبكر" ${data.DispatchSts === 'مبكر' ? 'selected' : ''}>مبكر</option>
+                                <option value="متأخر" ${data.DispatchSts === 'متأخر' ? 'selected' : ''}>متأخر</option>
+                                <option value="مشترك رحلات" ${data.DispatchSts === 'مشترك رحلات' ? 'selected' : ''}>مشترك رحلات</option>
+                                <option value="مشترك رحلات وصالات" ${data.DispatchSts === 'مشترك رحلات وصالات' ? 'selected' : ''}>مشترك رحلات وصالات</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">VisaType</label>
+                            <select class="form-select" id="VisaType">
+                                <option value="">اختر...</option>
+                                <option value="Hajj" ${data.VisaType === 'Hajj' ? 'selected' : ''}>Hajj</option>
+                                <option value="GCC" ${data.VisaType === 'GCC' ? 'selected' : ''}>GCC</option>
+                                <option value="Visit" ${data.VisaType === 'Visit' ? 'selected' : ''}>Visit</option>
+                                <option value="Tourism" ${data.VisaType === 'Tourism' ? 'selected' : ''}>Tourism</option>
+                                <option value="Work" ${data.VisaType === 'Work' ? 'selected' : ''}>Work</option>
+                                <option value="Umrah" ${data.VisaType === 'Umrah' ? 'selected' : ''}>Umrah</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">UmrahCop</label>
+                        <input type="text" class="form-input" id="UmrahCop" value="${data.UmrahCop || ''}">
+                    </div>
+                `,
+                'ScrWelcomeLounge': `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">BusNO</label>
+                            <input type="number" class="form-input" id="BusNO" value="${bus?.busNo || data.BusNO || ''}" readonly style="background:#333;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">ParkNO</label>
+                            <input type="number" class="form-input" id="ParkNO" value="${currentSpotForForm || data.ParkNO || ''}" min="1" max="87" placeholder="1-87">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">BusPlate</label>
+                            <input type="text" class="form-input" id="BusPlate" value="${bus?.plate || data.BusPlate || ''}" readonly style="background:#333;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">BagStatus</label>
+                            <select class="form-select" id="BagStatus">
+                                <option value="">اختر...</option>
+                                <option value="دينة" ${data.BagStatus === 'دينة' ? 'selected' : ''}>دينة</option>
+                                <option value="لا يوجد" ${data.BagStatus === 'لا يوجد' ? 'selected' : ''}>لا يوجد</option>
+                                <option value="مختلط" ${data.BagStatus === 'مختلط' ? 'selected' : ''}>مختلط</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">T3CALL</label>
+                            <input type="datetime-local" class="form-input" id="T3CALL" value="${data.T3CALL || ''}" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">FlightSts</label>
+                            <select class="form-select" id="FlightSts">
+                                <option value="">اختر...</option>
+                                <option value="أقلعت" ${data.FlightSts === 'أقلعت' ? 'selected' : ''}>أقلعت</option>
+                                <option value="أُلغيت" ${data.FlightSts === 'أُلغيت' ? 'selected' : ''}>أُلغيت</option>
+                                <option value="متأخرة" ${data.FlightSts === 'متأخرة' ? 'selected' : ''}>متأخرة</option>
+                                <option value="في الموعد" ${data.FlightSts === 'في الموعد' ? 'selected' : ''}>في الموعد</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">T3ACT</label>
+                            <select class="form-select" id="T3ACT">
+                                <option value="">اختر...</option>
+                                <option value="Approval" ${data.T3ACT === 'Approval' ? 'selected' : ''}>Approval</option>
+                                <option value="Waiting" ${data.T3ACT === 'Waiting' ? 'selected' : ''}>Waiting</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">GetaNO</label>
+                            <select class="form-select" id="GetaNO">
+                                <option value="">اختر...</option>
+                                <option value="A1" ${data.GetaNO === 'A1' ? 'selected' : ''}>A1</option>
+                                <option value="A2" ${data.GetaNO === 'A2' ? 'selected' : ''}>A2</option>
+                                <option value="B1" ${data.GetaNO === 'B1' ? 'selected' : ''}>B1</option>
+                                <option value="B2" ${data.GetaNO === 'B2' ? 'selected' : ''}>B2</option>
+                                <option value="C1" ${data.GetaNO === 'C1' ? 'selected' : ''}>C1</option>
+                                <option value="C2" ${data.GetaNO === 'C2' ? 'selected' : ''}>C2</option>
+                                <option value="D1" ${data.GetaNO === 'D1' ? 'selected' : ''}>D1</option>
+                                <option value="D2" ${data.GetaNO === 'D2' ? 'selected' : ''}>D2</option>
+                                <option value="E1" ${data.GetaNO === 'E1' ? 'selected' : ''}>E1</option>
+                                <option value="E2" ${data.GetaNO === 'E2' ? 'selected' : ''}>E2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">T3APRO</label>
+                        <input type="datetime-local" class="form-input" id="T3APRO" value="${data.T3APRO || ''}" step="1">
+                    </div>
+                `,
+                'ScrSegregationExit': `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">FlightNo</label>
+                            <input type="text" class="form-input" id="FlightNo" value="${bus?.flight || data.FlightNo || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">BusPlate</label>
+                            <input type="text" class="form-input" id="BusPlate" value="${bus?.plate || data.BusPlate || ''}">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">BusNO</label>
+                            <input type="number" class="form-input" id="BusNO" value="${data.BusNO || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">ExitDT</label>
+                            <input type="datetime-local" class="form-input" id="ExitDT" value="${data.ExitDT || new Date().toISOString().slice(0,16)}" step="1">
+                        </div>
+                    </div>
+                    <div style="background:rgba(255,152,0,0.2);padding:10px;border-radius:6px;margin-top:10px;">
+                        <span style="color:var(--orange);">⚠️ تحذير:</span> عند الحفظ سيتم إخلاء الموقف ونقل الحافلة لقسم البوابات
+                    </div>
+                `,
+                'ScrCurbside': `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">BusNO</label>
+                            <input type="number" class="form-input" id="BusNO" value="${data.BusNO || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">BusDepDT</label>
+                            <input type="datetime-local" class="form-input" id="BusDepDT" value="${data.BusDepDT || new Date().toISOString().slice(0,16)}" step="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">PaxDisembarkDT</label>
+                            <input type="datetime-local" class="form-input" id="PaxDisembarkDT" value="${data.PaxDisembarkDT || ''}" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">BusArrDT</label>
+                            <input type="datetime-local" class="form-input" id="BusArrDT" value="${data.BusArrDT || ''}" step="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">BusPlate</label>
+                            <input type="text" class="form-input" id="BusPlate" value="${bus?.plate || data.BusPlate || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">DelayReason</label>
+                            <select class="form-select" id="DelayReason">
+                                <option value="">اختر...</option>
+                                <option value="ZMZM" ${data.DelayReason === 'ZMZM' ? 'selected' : ''}>ZMZM</option>
+                                <option value="Operations" ${data.DelayReason === 'Operations' ? 'selected' : ''}>Operations</option>
+                                <option value="Bags" ${data.DelayReason === 'Bags' ? 'selected' : ''}>Bags</option>
+                                <option value="Passport Distribution" ${data.DelayReason === 'Passport Distribution' ? 'selected' : ''}>Passport Distribution</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">FlightSts</label>
+                            <select class="form-select" id="FlightSts">
+                                <option value="">اختر...</option>
+                                <option value="أقلعت" ${data.FlightSts === 'أقلعت' ? 'selected' : ''}>أقلعت</option>
+                                <option value="أُلغيت" ${data.FlightSts === 'أُلغيت' ? 'selected' : ''}>أُلغيت</option>
+                                <option value="متأخرة" ${data.FlightSts === 'متأخرة' ? 'selected' : ''}>متأخرة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">GetaNO</label>
+                            <select class="form-select" id="GetaNO">
+                                <option value="">اختر...</option>
+                                <option value="A1" ${(bus?.gate || data.GetaNO) === 'A1' ? 'selected' : ''}>A1</option>
+                                <option value="A2" ${(bus?.gate || data.GetaNO) === 'A2' ? 'selected' : ''}>A2</option>
+                                <option value="B1" ${(bus?.gate || data.GetaNO) === 'B1' ? 'selected' : ''}>B1</option>
+                                <option value="B2" ${(bus?.gate || data.GetaNO) === 'B2' ? 'selected' : ''}>B2</option>
+                                <option value="C1" ${(bus?.gate || data.GetaNO) === 'C1' ? 'selected' : ''}>C1</option>
+                                <option value="C2" ${(bus?.gate || data.GetaNO) === 'C2' ? 'selected' : ''}>C2</option>
+                                <option value="D1" ${(bus?.gate || data.GetaNO) === 'D1' ? 'selected' : ''}>D1</option>
+                                <option value="D2" ${(bus?.gate || data.GetaNO) === 'D2' ? 'selected' : ''}>D2</option>
+                                <option value="E1" ${(bus?.gate || data.GetaNO) === 'E1' ? 'selected' : ''}>E1</option>
+                                <option value="E2" ${(bus?.gate || data.GetaNO) === 'E2' ? 'selected' : ''}>E2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="background:rgba(244,67,54,0.2);padding:10px;border-radius:6px;margin-top:10px;">
+                        <span style="color:var(--red);">⚠️ تحذير:</span> عند الحفظ سيتم إخفاء الحافلة من البوابات ونقلها لسجل الحافلات المغادرة
+                    </div>
+                `
+            };
+            
+            return forms[formName] || '<p>النموذج غير متوفر</p>';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            currentFormName = null;
+            currentSpotForForm = null;
+            currentBusForForm = null;
+        }
+
+        function closeModalOnOverlay(e) {
+            if (e.target.id === 'modalOverlay') closeModal();
+        }
+
+        function saveFormData() {
+            // جمع البيانات من النموذج
+            const formData = {};
+            const inputs = document.querySelectorAll('#modalBody input, #modalBody select');
+            inputs.forEach(input => {
+                formData[input.id] = input.value;
+            });
+            formData.timestamp = new Date().toISOString();
+            
+            // معالجة حسب نوع النموذج
+            if (currentFormName === 'ScrSegregationIn') {
+                // تسجيل حافلة جديدة - تظهر في قائمة "مسجلة" بدون موقف
+                const newBus = {
+                    id: Date.now(),
+                    plate: formData.BusPlate,
+                    busNo: formData.BusNO,
+                    flight: formData.FlightNo,
+                    pax: parseInt(formData.PaxCount) || 0,
+                    visa: formData.VisaType,
+                    terminal: formData.TerminalCd,
+                    destination: formData.Destination,
+                    departure: formData.DepTime,
+                    arrival: new Date().toISOString(),
+                    tripCount: formData.TripCount,
+                    totalPax: formData.TotalPax,
+                    dispatchSts: formData.DispatchSts,
+                    umrahCop: formData.UmrahCop,
+                    curDT: formData.CurDT,
+                    spot: null, // بدون موقف حتى يتم تحديده في ScrWelcomeLounge
+                    gate: null,
+                    forms: { ScrSegregationIn: formData }
+                };
+                busData.push(newBus);
+                
+                // تحديث الإحصائيات
+                dailyStats.buses++;
+                dailyStats.pax += newBus.pax;
+                dailyStats.flights.add(newBus.flight);
+                
+                // تحديد حالة التفويج
+                const status = getStatus(newBus.arrival, newBus.departure);
+                if (status.class === 'early') dailyStats.early++;
+                else if (status.class === 'ontime') dailyStats.ontime++;
+                else if (status.class === 'late') dailyStats.late++;
+                
+                showNotification('success', 'ScrSegregationIn', `تم تسجيل الحافلة ${formData.BusPlate} - اضغط عليها في قائمة "مسجلة" لتحديد الموقف`);
+                
+            } else if (currentFormName === 'ScrWelcomeLounge') {
+                // استكمال تسجيل الحافلة - تحديد الموقف
+                const spotNum = parseInt(formData.ParkNO);
+                
+                if (!spotNum || spotNum < 1 || spotNum > 87) {
+                    showNotification('error', 'خطأ', 'يرجى تحديد رقم موقف صحيح (1-87)');
+                    return;
+                }
+                
+                // التحقق من أن الموقف فارغ
+                const existingBus = busData.find(b => b.spot === spotNum);
+                if (existingBus && existingBus.id !== currentBusForForm?.id) {
+                    showNotification('error', 'خطأ', `الموقف ${spotNum} مشغول بالفعل`);
+                    return;
+                }
+                
+                // تحديث بيانات الحافلة
+                if (currentBusForForm) {
+                    const busIndex = busData.findIndex(b => b.id === currentBusForForm.id);
+                    if (busIndex !== -1) {
+                        busData[busIndex].spot = spotNum;
+                        busData[busIndex].gate = formData.GetaNO;
+                        busData[busIndex].bagStatus = formData.BagStatus;
+                        busData[busIndex].flightSts = formData.FlightSts;
+                        busData[busIndex].t3call = formData.T3CALL;
+                        busData[busIndex].t3act = formData.T3ACT;
+                        busData[busIndex].t3apro = formData.T3APRO;
+                        busData[busIndex].forms.ScrWelcomeLounge = formData;
+                    }
+                }
+                
+                showNotification('success', 'ScrWelcomeLounge', `تم تحديد الموقف ${spotNum} للحافلة`);
+                
+            } else if (currentFormName === 'ScrSegregationExit') {
+                // خروج الحافلة من الموقف
+                if (currentBusForForm) {
+                    const busIndex = busData.findIndex(b => b.id === currentBusForForm.id);
+                    if (busIndex !== -1) {
+                        const bus = busData[busIndex];
+                        bus.exitDT = formData.ExitDT;
+                        bus.forms.ScrSegregationExit = formData;
+                        bus.spot = null; // إخلاء الموقف
+                        // الحافلة تبقى في القائمة لكن بدون موقف - تنتظر البوابة
+                    }
+                }
+                showNotification('success', 'ScrSegregationExit', 'تم إخلاء الموقف');
+                
+            } else if (currentFormName === 'ScrCurbside') {
+                // مغادرة الحافلة نهائياً
+                if (currentBusForForm) {
+                    const busIndex = busData.findIndex(b => b.id === currentBusForForm.id);
+                    if (busIndex !== -1) {
+                        const bus = busData.splice(busIndex, 1)[0];
+                        bus.busDepDT = formData.BusDepDT;
+                        bus.busArrDT = formData.BusArrDT;
+                        bus.paxDisembarkDT = formData.PaxDisembarkDT;
+                        bus.delayReason = formData.DelayReason;
+                        bus.forms.ScrCurbside = formData;
+                        departedBuses.unshift(bus);
+                    }
+                }
+                showNotification('success', 'ScrCurbside', 'تم تسجيل مغادرة الحافلة');
+            }
+            
+            closeModal();
+            
+            // حفظ البيانات
+            saveData();
+            
+            // تحديث العرض
+            updateStats();
+            renderParkingGrid('entranceGrid', 1, 42);
+            renderParkingGrid('exitGrid', 43, 87);
+            renderGates();
+            updateBusLists();
+            updateKPIs();
+        }
+
+        // ═══════════════ تحديث قوائم الحافلات ═══════════════
+        function updateBusLists() {
+            updateRegisteredList();
+            updateSegregationList();
+            updateDepartedList();
+        }
+
+        function updateRegisteredList() {
+            const list = document.getElementById('registeredList');
+            document.getElementById('registeredCount').textContent = busData.length;
+            
+            if (busData.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد حافلات مسجلة</div>';
+                return;
+            }
+            
+            list.innerHTML = busData.map(bus => {
+                const status = getStatus(bus.arrival, bus.departure);
+                const formsCompleted = bus.forms ? Object.keys(bus.forms).length : 1;
+                const busJson = JSON.stringify(bus).replace(/"/g, '&quot;');
+                return `
+                    <div class="bus-card ${status.class}" onclick="openBusForm('${busJson}')">
+                        <div class="bus-card-header">
+                            <span class="bus-card-plate">${bus.plate}</span>
+                            <span class="bus-card-badge ${status.class}">${bus.spot ? 'موقف ' + bus.spot : 'انتظار موقف'}</span>
+                        </div>
+                        <div class="bus-card-info">
+                            <span>B: ${bus.busNo || '-'}</span>
+                            <span>F: ${bus.flight || '-'}</span>
+                            <span>P: ${bus.pax || '-'}</span>
+                            <span>G: ${bus.gate || '-'}</span>
+                        </div>
+                        <div class="bus-card-progress">
+                            <div class="bus-card-progress-fill" style="width:${formsCompleted * 25}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // فتح النموذج المناسب للحافلة
+        function openBusForm(busJson) {
+            const bus = JSON.parse(busJson.replace(/&quot;/g, '"'));
+            currentBusForForm = bus;
+            
+            // تحديد النموذج المناسب حسب حالة الحافلة
+            if (!bus.spot) {
+                // الحافلة بدون موقف - فتح ScrWelcomeLounge لتحديد الموقف
+                openFormModal('ScrWelcomeLounge', bus);
+            } else if (!bus.forms?.ScrSegregationExit) {
+                // الحافلة في موقف - فتح ScrSegregationExit للخروج
+                openFormModal('ScrSegregationExit', bus);
+            } else {
+                // الحافلة خرجت من الموقف - فتح ScrCurbside للمغادرة
+                openFormModal('ScrCurbside', bus);
+            }
+        }
+
+        function updateSegregationList() {
+            const list = document.getElementById('segregationList');
+            const segregationBuses = busData.filter(b => b.spot);
+            document.getElementById('segregationCount').textContent = segregationBuses.length;
+            
+            if (segregationBuses.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد حافلات في الفرز</div>';
+                return;
+            }
+            
+            list.innerHTML = segregationBuses.map(bus => {
+                const status = getStatus(bus.arrival, bus.departure);
+                return `
+                    <div class="bus-card ${status.class}" onclick="showFormsMenu(event, ${bus.spot})">
+                        <div class="bus-card-header">
+                            <span class="bus-card-plate">${bus.plate}</span>
+                            <span class="bus-card-badge ${status.class}">موقف ${bus.spot}</span>
+                        </div>
+                        <div class="bus-card-info">
+                            <span>${bus.flight}</span>
+                            <span>${bus.pax || '-'}</span>
+                            <span>${status.hours.toFixed(1)} س</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateDepartedList() {
+            const list = document.getElementById('departedList');
+            document.getElementById('departedCount').textContent = departedBuses.length;
+            document.getElementById('departedToday').textContent = departedBuses.length;
+            document.getElementById('departedPax').textContent = departedBuses.reduce((s, b) => s + (b.pax || 0), 0);
+            
+            if (departedBuses.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">لا توجد حافلات غادرت</div>';
+                return;
+            }
+            
+            list.innerHTML = departedBuses.slice(0, 20).map(bus => `
+                <div class="bus-card completed" onclick="showFormsMenu(event, null)">
+                    <div class="bus-card-header">
+                        <span class="bus-card-plate">${bus.plate}</span>
+                        <span class="bus-card-badge completed">مكتملة</span>
+                    </div>
+                    <div class="bus-card-info">
+                        <span>${bus.flight}</span>
+                        <span>${bus.pax || '-'}</span>
+                        <span>${bus.gate || '-'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ═══════════════ ملء الشاشة ═══════════════
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // ═══════════════ التكبير ═══════════════
+        function zoomIn() { setZoom(Math.min(zoomLevel + 10, 150)); }
+        function zoomOut() { setZoom(Math.max(zoomLevel - 10, 50)); }
+        function zoomReset() { setZoom(100); }
+
+        function setZoom(level) {
+            zoomLevel = parseInt(level);
+            document.getElementById('zoomLevel').textContent = zoomLevel + '%';
+            document.getElementById('zoomSlider').value = zoomLevel;
+            document.querySelector('.content-area').style.transform = `scale(${zoomLevel/100})`;
+            document.querySelector('.content-area').style.transformOrigin = 'top center';
+        }
+
+        // ═══════════════ وضع التحرير ═══════════════
+        function toggleEditMode() {
+            editMode = !editMode;
+            document.getElementById('editBtn').textContent = editMode ? 'إيقاف التحرير' : 'تفعيل وضع التحرير';
+            showNotification(editMode ? 'success' : 'info', 'وضع التحرير', editMode ? 'تم التفعيل' : 'تم الإيقاف');
+        }
+
+        // ═══════════════ التصدير والاستيراد ═══════════════
+        function exportJSON() {
+            const data = JSON.stringify({ busData, dailyStats: {...dailyStats, flights: [...dailyStats.flights]} }, null, 2);
+            downloadFile(data, 'LOCC_Data.json', 'application/json');
+            showNotification('success', 'تصدير', 'تم تصدير البيانات بنجاح');
+        }
+
+        function exportCSV() {
+            let csv = 'الموقف,اللوحة,الرحلة,الركاب,البوابة,المغادرة,الحالة\n';
+            busData.forEach(b => {
+                const s = getStatus(b.arrival, b.departure);
+                csv += `${b.spot},${b.plate},${b.flight},${b.pax},${b.gate},${b.departure},${s.label}\n`;
+            });
+            downloadFile(csv, 'LOCC_Data.csv', 'text/csv');
+            showNotification('success', 'تصدير', 'تم تصدير CSV بنجاح');
+        }
+
+        function downloadFile(data, filename, type) {
+            const blob = new Blob(['\ufeff' + data], { type: type + ';charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        function importJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const d = JSON.parse(ev.target.result);
+                    busData = d.busData || d;
+                    if (d.dailyStats) dailyStats = {...d.dailyStats, flights: new Set(d.dailyStats.flights)};
+                    updateStats();
+                    renderParkingGrid('entranceGrid', 1, 42);
+                    renderParkingGrid('exitGrid', 43, 87);
+                    saveData();
+                    showNotification('success', 'استيراد', 'تم استيراد البيانات بنجاح');
+                } catch { showNotification('error', 'خطأ', 'فشل استيراد الملف'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetAll() {
+            if (confirm('⚠️ هل أنت متأكد من حذف جميع البيانات؟')) {
+                busData = [];
+                dailyStats = { buses: 0, pax: 0, early: 0, ontime: 0, late: 0, flights: new Set() };
+                localStorage.removeItem('LOCC_Data');
+                updateStats();
+                renderParkingGrid('entranceGrid', 1, 42);
+                renderParkingGrid('exitGrid', 43, 87);
+                showNotification('warning', 'مسح', 'تم حذف جميع البيانات');
+            }
+        }
+
+        function clearAllData() {
+            // تصفير قائمة الحافلات
+            busData = [];
+            departedBuses = [];
+            
+            // تصفير الإحصائيات اليومية
+            dailyStats = { buses: 0, pax: 0, early: 0, ontime: 0, late: 0, flights: new Set() };
+            
+            // تحديث العرض
+            updateStats();
+            renderParkingGrid('entranceGrid', 1, 42);
+            renderParkingGrid('exitGrid', 43, 87);
+            renderGates();
+            updateRegisteredList();
+            updateSegregationList();
+            updateDepartedList();
+            updateKPIs();
+            
+            // حفظ البيانات الفارغة
+            saveData();
+            
+            showNotification('success', 'تصفير', 'تم تصفير جميع البيانات والإحصائيات');
+        }
+
+        // ═══════════════ حفظ وتحميل البيانات ═══════════════
+        function saveData() {
+            localStorage.setItem('LOCC_Data', JSON.stringify({
+                busData,
+                departedBuses,
+                dailyStats: {...dailyStats, flights: [...dailyStats.flights]}
+            }));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('LOCC_Data');
+            if (saved) {
+                const d = JSON.parse(saved);
+                busData = d.busData || [];
+                departedBuses = d.departedBuses || [];
+                if (d.dailyStats) dailyStats = {...d.dailyStats, flights: new Set(d.dailyStats.flights || [])};
+            }
+            // لا نحمّل بيانات تجريبية هنا - ستُحمّل في init إذا لم توجد بيانات
+        }
+
+        function filterBuses(type) {
+            showNotification('info', 'فلترة', `عرض: ${type === 'all' ? 'الكل' : type}`);
+        }
+
+        // ═══════════════ بدء النظام ═══════════════
+        init();
+    </script>
+</body>
+</html>
