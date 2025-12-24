@@ -473,11 +473,13 @@
         /* ═══════════════ لوحة التحكم الجانبية ═══════════════ */
         .control-panel {
             width: var(--panel-width);
-            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
-            border-right: 3px solid var(--primary);
+           background: ...
+           border-right: ...
             padding: 15px;
             overflow-y: auto;
             transition: all 0.3s;
+            position: relative;
+            z-index: 100;
         }
 
         .control-panel.hidden {
