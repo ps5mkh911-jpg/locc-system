@@ -1436,6 +1436,15 @@
                         <button class="panel-btn primary" onclick="zoomReset()" style="flex:1" id="zoomLevel">100%</button>
                         <button class="panel-btn primary" onclick="zoomIn()" style="flex:1">➕</button>
                     </div>
+                    <div class="panel-section">
+                    <div class="panel-title">حجم المواقف</div>
+                    <div style="display:flex;gap:5px;">
+                        <button class="panel-btn primary" onclick="spotSizeOut()" style="flex:1">➖</button>
+                        <button class="panel-btn primary" style="flex:1" id="spotSizeLevel">55px</button>
+                        <button class="panel-btn primary" onclick="spotSizeIn()" style="flex:1">➕</button>
+                    </div>
+                    <input type="range" min="40" max="100" value="55" style="width:100%;margin-top:8px;" onchange="setSpotSize(this.value)" id="spotSizeSlider">
+                </div>
                     <input type="range" min="50" max="150" value="100" style="width:100%;margin-top:8px;" onchange="setZoom(this.value)" id="zoomSlider">
                 </div>
 
@@ -3228,7 +3237,7 @@
             if (saved) {
                 const d = JSON.parse(saved);
                 busData = d.busData || [];
-                departedBuses = d.departedBuses || [];
+                departedBuses = d.departedBuses || []
                 if (d.dailyStats) dailyStats = {...d.dailyStats, flights: new Set(d.dailyStats.flights || [])};
             }
             // لا نحمّل بيانات تجريبية هنا - ستُحمّل في init إذا لم توجد بيانات
@@ -3237,7 +3246,21 @@
         function filterBuses(type) {
             showNotification('info', 'فلترة', `عرض: ${type === 'all' ? 'الكل' : type}`);
         }
+// ═══════════════ حجم المواقف ═══════════════
+        let spotSize = 55;
 
+        function spotSizeIn() { setSpotSize(Math.min(spotSize + 5, 100)); }
+        function spotSizeOut() { setSpotSize(Math.max(spotSize - 5, 40)); }
+
+        function setSpotSize(size) {
+            spotSize = parseInt(size);
+            document.getElementById('spotSizeLevel').textContent = spotSize + 'px';
+            document.getElementById('spotSizeSlider').value = spotSize;
+            document.querySelectorAll('.parking-spot').forEach(spot => {
+                spot.style.minHeight = spotSize + 'px';
+                spot.style.maxWidth = spotSize + 'px';
+            });
+        }
         // ═══════════════ بدء النظام ═══════════════
         init();
     </script>
