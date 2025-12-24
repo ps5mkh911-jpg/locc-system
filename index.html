@@ -276,11 +276,71 @@
             overflow-y: auto;
         }
 
+        /* ═══════════════ إطار المواقف الثابت ═══════════════ */
+        .parking-wrapper {
+            border: 3px solid var(--primary);
+            border-radius: 15px;
+            background: linear-gradient(180deg, rgba(26,26,26,0.95) 0%, rgba(10,10,10,0.98) 100%);
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(255,215,0,0.2), inset 0 0 50px rgba(0,0,0,0.5);
+            /* حجم ثابت لا يتأثر بالتكبير */
+            width: 100%;
+            min-height: 500px;
+            max-height: 75vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .parking-wrapper-title {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+            padding: 10px 20px;
+            background: rgba(255,215,0,0.1);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(255,215,0,0.5);
+            letter-spacing: 2px;
+        }
+
+        .parking-inner {
+            width: 100%;
+            height: calc(100% - 60px);
+            overflow: auto;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+        }
+
+        .parking-inner::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .parking-inner::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.5);
+            border-radius: 5px;
+        }
+
+        .parking-inner::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 5px;
+        }
+
+        .parking-inner::-webkit-scrollbar-corner {
+            background: rgba(0,0,0,0.5);
+        }
+
         /* ═══════════════ حاوية المواقف الأفقية ═══════════════ */
         .parking-container {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             margin-bottom: 15px;
+            transform-origin: top right;
+            transition: transform 0.3s ease;
         }
 
         /* ═══════════════ منطقة المواقف ═══════════════ */
@@ -1383,18 +1443,25 @@
     <div class="main-container">
         <!-- منطقة المحتوى -->
         <div class="content-area">
-            <!-- حاوية المواقف الأفقية -->
-            <div class="parking-container">
-                <!-- جهة المدخل -->
-                <div class="parking-section">
-                    <div class="section-title">جهة المدخل (42 موقف)</div>
-                    <div class="parking-grid" id="entranceGrid"></div>
-                </div>
+            <!-- إطار المواقف الثابت -->
+            <div class="parking-wrapper" id="parkingWrapper">
+                <div class="parking-wrapper-title">🚌 ساحة انتظار الحافلات 🚌</div>
+                <!-- منطقة التمرير الداخلية -->
+                <div class="parking-inner" id="parkingInner">
+                    <!-- حاوية المواقف الأفقية -->
+                    <div class="parking-container" id="parkingContainer">
+                        <!-- جهة المدخل -->
+                        <div class="parking-section">
+                            <div class="section-title">جهة المدخل (42 موقف)</div>
+                            <div class="parking-grid" id="entranceGrid"></div>
+                        </div>
 
-                <!-- جهة المخرج -->
-                <div class="parking-section">
-                    <div class="section-title">جهة المخرج (45 موقف)</div>
-                    <div class="parking-grid exit-grid" id="exitGrid"></div>
+                        <!-- جهة المخرج -->
+                        <div class="parking-section">
+                            <div class="section-title">جهة المخرج (45 موقف)</div>
+                            <div class="parking-grid exit-grid" id="exitGrid"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -3127,8 +3194,12 @@
             zoomLevel = parseInt(level);
             document.getElementById('zoomLevel').textContent = zoomLevel + '%';
             document.getElementById('zoomSlider').value = zoomLevel;
-            document.querySelector('.content-area').style.transform = `scale(${zoomLevel/100})`;
-            document.querySelector('.content-area').style.transformOrigin = 'top center';
+            // تطبيق التكبير على حاوية المواقف فقط داخل الإطار الثابت
+            const parkingContainer = document.getElementById('parkingContainer');
+            if (parkingContainer) {
+                parkingContainer.style.transform = `scale(${zoomLevel/100})`;
+                parkingContainer.style.transformOrigin = 'top right';
+            }
         }
 
         // ═══════════════ وضع التحرير ═══════════════
