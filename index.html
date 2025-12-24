@@ -473,8 +473,8 @@
         /* ═══════════════ لوحة التحكم الجانبية ═══════════════ */
         .control-panel {
             width: var(--panel-width);
-           background: ...
-           border-right: ...
+            background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+            border-right: 2px solid var(--primary);
             padding: 15px;
             overflow-y: auto;
             transition: all 0.3s;
@@ -1409,14 +1409,14 @@
         <div class="control-panel" id="controlPanel">
             <!-- التبويبات -->
             <div class="panel-tabs">
-                <button class="panel-tab active" onclick="showTab('main')" title="الرئيسية">رئيسية</button>
-                <button class="panel-tab" onclick="showTab('settings')" title="الإعدادات">إعدادات</button>
-                <button class="panel-tab" onclick="showTab('alerts')" title="التنبيهات">تنبيهات</button>
-                <button class="panel-tab" onclick="showTab('kpis')" title="المؤشرات">مؤشرات</button>
-                <button class="panel-tab" onclick="showTab('forms')" title="النماذج">نماذج</button>
-                <button class="panel-tab" onclick="showTab('registered')" title="المسجلة">مسجلة</button>
-                <button class="panel-tab" onclick="showTab('segregation')" title="الفرز">فرز</button>
-                <button class="panel-tab" onclick="showTab('departed')" title="غادرت">غادرت</button>
+                <button class="panel-tab active" onclick="showTab('main', event)" title="الرئيسية">رئيسية</button>
+                <button class="panel-tab" onclick="showTab('settings', event)" title="الإعدادات">إعدادات</button>
+                <button class="panel-tab" onclick="showTab('alerts', event)" title="التنبيهات">تنبيهات</button>
+                <button class="panel-tab" onclick="showTab('kpis', event)" title="المؤشرات">مؤشرات</button>
+                <button class="panel-tab" onclick="showTab('forms', event)" title="النماذج">نماذج</button>
+                <button class="panel-tab" onclick="showTab('registered', event)" title="المسجلة">مسجلة</button>
+                <button class="panel-tab" onclick="showTab('segregation', event)" title="الفرز">فرز</button>
+                <button class="panel-tab" onclick="showTab('departed', event)" title="غادرت">غادرت</button>
             </div>
 
             <!-- Tab 1: الرئيسية -->
@@ -1774,10 +1774,17 @@
     <script>
         // ═══════════════ المتغيرات العامة ═══════════════
         let busData = [];
-        let busRecords = [];
         let departedBuses = [];
-        let gateStats = {};
         let dailyStats = { buses: 0, pax: 0, early: 0, ontime: 0, late: 0, flights: new Set() };
+        let intervalIds = []; // لتخزين معرفات setInterval للتنظيف
+
+        // ═══════════════ دالة الحماية من XSS ═══════════════
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
         let zoomLevel = 100;
         let editMode = false;
         let panelVisible = true;
@@ -1808,9 +1815,14 @@
             updateBusLists();
             updateTime();
             
-            setInterval(updateTime, 1000);
-            setInterval(updateCountdowns, 1000);
-            setInterval(saveData, 30000);
+            // تنظيف أي intervals سابقة
+            intervalIds.forEach(id => clearInterval(id));
+            intervalIds = [];
+
+            // إنشاء intervals جديدة وحفظ معرفاتها
+            intervalIds.push(setInterval(updateTime, 1000));
+            intervalIds.push(setInterval(updateCountdowns, 1000));
+            intervalIds.push(setInterval(saveData, 30000));
         }
         
         // ═══════════════ بيانات تجريبية - 20 حافلة ═══════════════
@@ -1921,14 +1933,14 @@
 
                     spot.innerHTML = `
                         <div class="spot-number">#${i}</div>
-                        <div class="spot-badge ${status.class}">${status.label}</div>
+                        <div class="spot-badge ${status.class}">${escapeHtml(status.label)}</div>
                         <div class="bus-info">
-                            <div class="info-row"><span class="info-icon">B</span>${bus.plate}</div>
-                            <div class="info-row"><span class="info-icon">F</span>${bus.flight}</div>
-                            <div class="info-row"><span class="info-icon">P</span>${bus.pax || '-'}</div>
-                            <div class="info-row"><span class="info-icon">G</span>${bus.gate || '-'}</div>
+                            <div class="info-row"><span class="info-icon">B</span>${escapeHtml(bus.plate)}</div>
+                            <div class="info-row"><span class="info-icon">F</span>${escapeHtml(bus.flight)}</div>
+                            <div class="info-row"><span class="info-icon">P</span>${escapeHtml(bus.pax) || '-'}</div>
+                            <div class="info-row"><span class="info-icon">G</span>${escapeHtml(bus.gate) || '-'}</div>
                         </div>
-                        <div class="countdown" style="color:${status.color}">⏱️ ${countdown}</div>
+                        <div class="countdown" style="color:${status.color}">⏱️ ${escapeHtml(countdown)}</div>
                     `;
 
                     spot.onmouseenter = (e) => showTooltip(e, bus, status, i);
@@ -1964,15 +1976,15 @@
                 gateSection.className = 'gate-section';
                 gateSection.innerHTML = `
                     <div class="gate-header">
-                        <span class="gate-title">${gate}</span>
+                        <span class="gate-title">${escapeHtml(gate)}</span>
                         <div class="gate-stats-mini">
                             <span class="early">${early}</span>
                             <span class="ontime">${ontime}</span>
                             <span class="late">${late}</span>
                         </div>
                     </div>
-                    <div class="gate-buses-list" id="gateList-${gate}">
-                        ${gateBuses.length === 0 ? 
+                    <div class="gate-buses-list" id="gateList-${escapeHtml(gate)}">
+                        ${gateBuses.length === 0 ?
                             '<div style="text-align:center;color:var(--text-muted);padding:10px;font-size:0.75rem;">لا توجد حافلات</div>' :
                             gateBuses.map(bus => {
                                 const status = getStatus(bus.arrival, bus.departure);
@@ -1980,12 +1992,12 @@
                                 return `
                                     <div class="gate-bus-card ${status.class}" onclick="showFormsMenu(event, ${bus.spot})">
                                         <div style="flex:1;">
-                                            <div style="font-weight:700;color:var(--primary);">${bus.plate}</div>
-                                            <div style="font-size:0.7rem;color:var(--text-muted);">${bus.flight} | ${bus.pax || '-'}</div>
+                                            <div style="font-weight:700;color:var(--primary);">${escapeHtml(bus.plate)}</div>
+                                            <div style="font-size:0.7rem;color:var(--text-muted);">${escapeHtml(bus.flight)} | ${escapeHtml(bus.pax) || '-'}</div>
                                         </div>
                                         <div style="text-align:left;font-size:0.75rem;">
-                                            <div style="color:${status.color};">${countdown}</div>
-                                            <div style="font-size:0.65rem;color:var(--text-muted);">${status.label}</div>
+                                            <div style="color:${status.color};">${escapeHtml(countdown)}</div>
+                                            <div style="font-size:0.65rem;color:var(--text-muted);">${escapeHtml(status.label)}</div>
                                         </div>
                                     </div>
                                 `;
@@ -2208,13 +2220,13 @@
             tooltip.style.display = 'block';
             tooltip.innerHTML = `
                 <div class="tooltip-title">موقف #${spot}</div>
-                <div class="tooltip-row"><b>اللوحة:</b> ${bus.plate}</div>
-                <div class="tooltip-row"><b>الرحلة:</b> ${bus.flight}</div>
-                <div class="tooltip-row"><b>الركاب:</b> ${bus.pax || '-'}</div>
-                <div class="tooltip-row"><b>البوابة:</b> ${bus.gate || '-'}</div>
-                <div class="tooltip-row"><b>المغادرة:</b> ${bus.departure}</div>
-                <div class="tooltip-row"><b>الوقت المتبقي:</b> ${getCountdownString(bus.departure)}</div>
-                <div class="tooltip-row" style="color:${status.color}"><b>الحالة:</b> ${status.label}</div>
+                <div class="tooltip-row"><b>اللوحة:</b> ${escapeHtml(bus.plate)}</div>
+                <div class="tooltip-row"><b>الرحلة:</b> ${escapeHtml(bus.flight)}</div>
+                <div class="tooltip-row"><b>الركاب:</b> ${escapeHtml(bus.pax) || '-'}</div>
+                <div class="tooltip-row"><b>البوابة:</b> ${escapeHtml(bus.gate) || '-'}</div>
+                <div class="tooltip-row"><b>المغادرة:</b> ${escapeHtml(bus.departure)}</div>
+                <div class="tooltip-row"><b>الوقت المتبقي:</b> ${escapeHtml(getCountdownString(bus.departure))}</div>
+                <div class="tooltip-row" style="color:${status.color}"><b>الحالة:</b> ${escapeHtml(status.label)}</div>
             `;
             moveTooltip(e);
         }
@@ -2231,11 +2243,14 @@
 
         // ═══════════════ التعامل مع النقر ═══════════════
         function handleSpotClick(spot, bus, e) {
-            if (e) {
+            if (editMode && bus) {
+                // في وضع التحرير - تحديد الموقف
+                selectSpot(spot, bus);
+            } else if (e) {
                 showFormsMenu(e, spot, bus);
             } else {
                 if (bus) {
-                    showNotification('info', `موقف #${spot}`, `الحافلة: ${bus.plate}`);
+                    showNotification('info', `موقف #${spot}`, `الحافلة: ${escapeHtml(bus.plate)}`);
                 } else {
                     showNotification('info', `موقف #${spot}`, 'الموقف فارغ - انقر للإضافة');
                 }
@@ -2247,7 +2262,7 @@
             const container = document.getElementById('notifications');
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            notification.innerHTML = `<strong>${title}</strong><br>${message}`;
+            notification.innerHTML = `<strong>${escapeHtml(title)}</strong><br>${escapeHtml(message)}`;
             container.appendChild(notification);
 
             setTimeout(() => notification.remove(), 5000);
@@ -2263,18 +2278,20 @@
         }
 
         // ═══════════════ التبويبات ═══════════════
-        function showTab(tabName) {
+        function showTab(tabName, e) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabName).classList.add('active');
-            event.target.classList.add('active');
+            if (e && e.target) {
+                e.target.classList.add('active');
+            }
             if (tabName === 'kpis') updateKPIs();
         }
 
         // ═══════════════ إعدادات الحدود ═══════════════
         function updateThresholds() {
-            thresholds.early = parseInt(document.getElementById('earlyThreshold').value) || 7;
-            thresholds.late = parseInt(document.getElementById('lateThreshold').value) || 3;
+            thresholds.early = parseInt(document.getElementById('earlyThreshold').value, 10) || 7;
+            thresholds.late = parseInt(document.getElementById('lateThreshold').value, 10) || 3;
             updateStats();
             renderParkingGrid('entranceGrid', 1, 42);
             renderParkingGrid('exitGrid', 43, 87);
@@ -2388,12 +2405,12 @@
             }
             
             container.innerHTML = alertsList.map(a => `
-                <div class="alert-item ${a.type}">
+                <div class="alert-item ${escapeHtml(a.type)}">
                     <div class="alert-header">
-                        <span class="alert-title">${a.title}</span>
-                        <span class="alert-time">${a.time}</span>
+                        <span class="alert-title">${escapeHtml(a.title)}</span>
+                        <span class="alert-time">${escapeHtml(a.time)}</span>
                     </div>
-                    <div>${a.message}</div>
+                    <div>${escapeHtml(a.message)}</div>
                 </div>
             `).join('');
         }
@@ -2453,7 +2470,7 @@
         let selectedSpot = null;
 
         function addNewBus() {
-            const spotNum = parseInt(document.getElementById('newSpotNumber').value);
+            const spotNum = parseInt(document.getElementById('newSpotNumber').value, 10);
             if (!spotNum || spotNum < 1 || spotNum > 87) {
                 showNotification('error', 'خطأ', 'أدخل رقم موقف صحيح (1-87)');
                 return;
@@ -2480,8 +2497,8 @@
         function moveSpot() {
             if (selectedSpot && selectedSpot.bus) {
                 const newSpot = prompt('أدخل رقم الموقف الجديد (1-87):');
-                if (newSpot && !busData.find(b => b.spot === parseInt(newSpot))) {
-                    selectedSpot.bus.spot = parseInt(newSpot);
+                if (newSpot && !busData.find(b => b.spot === parseInt(newSpot, 10))) {
+                    selectedSpot.bus.spot = parseInt(newSpot, 10);
                     updateStats();
                     renderParkingGrid('entranceGrid', 1, 42);
                     renderParkingGrid('exitGrid', 43, 87);
@@ -2512,33 +2529,52 @@
         }
 
         // ═══════════════ قائمة النماذج ═══════════════
+        let formsMenuClickHandler = null; // لتخزين معالج الحدث
+
         function showFormsMenu(e, spotNum, bus = null) {
             e.stopPropagation();
             const menu = document.getElementById('formsMenu');
             currentSpotForForm = spotNum;
             currentBusForForm = bus;
-            
+
             // تحديث حالة النماذج
             updateFormStatusInMenu(bus);
-            
+
             // حساب الموقع
             let x = e.pageX;
             let y = e.pageY;
             if (x + 230 > window.innerWidth) x = window.innerWidth - 240;
             if (y + 300 > window.innerHeight) y = window.innerHeight - 310;
-            
+
             menu.style.left = x + 'px';
             menu.style.top = y + 'px';
             menu.classList.add('active');
-            
+
+            // إزالة أي معالج سابق لتجنب التراكم
+            if (formsMenuClickHandler) {
+                document.removeEventListener('click', formsMenuClickHandler);
+            }
+
+            // إنشاء معالج جديد
+            formsMenuClickHandler = function(event) {
+                if (!menu.contains(event.target)) {
+                    closeFormsMenu();
+                }
+            };
+
             // إغلاق عند النقر خارجها
             setTimeout(() => {
-                document.addEventListener('click', closeFormsMenu, { once: true });
+                document.addEventListener('click', formsMenuClickHandler);
             }, 100);
         }
 
         function closeFormsMenu() {
             document.getElementById('formsMenu').classList.remove('active');
+            // إزالة معالج الحدث عند الإغلاق
+            if (formsMenuClickHandler) {
+                document.removeEventListener('click', formsMenuClickHandler);
+                formsMenuClickHandler = null;
+            }
         }
 
         function updateFormStatusInMenu(bus) {
@@ -2889,7 +2925,7 @@
                     plate: formData.BusPlate,
                     busNo: formData.BusNO,
                     flight: formData.FlightNo,
-                    pax: parseInt(formData.PaxCount) || 0,
+                    pax: parseInt(formData.PaxCount, 10) || 0,
                     visa: formData.VisaType,
                     terminal: formData.TerminalCd,
                     destination: formData.Destination,
@@ -2921,7 +2957,7 @@
                 
             } else if (currentFormName === 'ScrWelcomeLounge') {
                 // استكمال تسجيل الحافلة - تحديد الموقف
-                const spotNum = parseInt(formData.ParkNO);
+                const spotNum = parseInt(formData.ParkNO, 10);
                 
                 if (!spotNum || spotNum < 1 || spotNum > 87) {
                     showNotification('error', 'خطأ', 'يرجى تحديد رقم موقف صحيح (1-87)');
@@ -3018,16 +3054,16 @@
                 const formsCompleted = bus.forms ? Object.keys(bus.forms).length : 1;
                 const busJson = JSON.stringify(bus).replace(/"/g, '&quot;');
                 return `
-                    <div class="bus-card ${status.class}" onclick="openBusForm('${busJson}')">
+                    <div class="bus-card ${escapeHtml(status.class)}" onclick="openBusForm('${busJson}')">
                         <div class="bus-card-header">
-                            <span class="bus-card-plate">${bus.plate}</span>
-                            <span class="bus-card-badge ${status.class}">${bus.spot ? 'موقف ' + bus.spot : 'انتظار موقف'}</span>
+                            <span class="bus-card-plate">${escapeHtml(bus.plate)}</span>
+                            <span class="bus-card-badge ${escapeHtml(status.class)}">${bus.spot ? 'موقف ' + escapeHtml(bus.spot) : 'انتظار موقف'}</span>
                         </div>
                         <div class="bus-card-info">
-                            <span>B: ${bus.busNo || '-'}</span>
-                            <span>F: ${bus.flight || '-'}</span>
-                            <span>P: ${bus.pax || '-'}</span>
-                            <span>G: ${bus.gate || '-'}</span>
+                            <span>B: ${escapeHtml(bus.busNo) || '-'}</span>
+                            <span>F: ${escapeHtml(bus.flight) || '-'}</span>
+                            <span>P: ${escapeHtml(bus.pax) || '-'}</span>
+                            <span>G: ${escapeHtml(bus.gate) || '-'}</span>
                         </div>
                         <div class="bus-card-progress">
                             <div class="bus-card-progress-fill" style="width:${formsCompleted * 25}%"></div>
@@ -3039,9 +3075,16 @@
         
         // فتح النموذج المناسب للحافلة
         function openBusForm(busJson) {
-            const bus = JSON.parse(busJson.replace(/&quot;/g, '"'));
+            let bus;
+            try {
+                bus = JSON.parse(busJson.replace(/&quot;/g, '"'));
+            } catch (e) {
+                console.error('خطأ في تحليل بيانات الحافلة:', e);
+                showNotification('error', 'خطأ', 'فشل في قراءة بيانات الحافلة');
+                return;
+            }
             currentBusForForm = bus;
-            
+
             // تحديد النموذج المناسب حسب حالة الحافلة
             if (!bus.spot) {
                 // الحافلة بدون موقف - فتح ScrWelcomeLounge لتحديد الموقف
@@ -3068,14 +3111,14 @@
             list.innerHTML = segregationBuses.map(bus => {
                 const status = getStatus(bus.arrival, bus.departure);
                 return `
-                    <div class="bus-card ${status.class}" onclick="showFormsMenu(event, ${bus.spot})">
+                    <div class="bus-card ${escapeHtml(status.class)}" onclick="showFormsMenu(event, ${parseInt(bus.spot, 10) || 0})">
                         <div class="bus-card-header">
-                            <span class="bus-card-plate">${bus.plate}</span>
-                            <span class="bus-card-badge ${status.class}">موقف ${bus.spot}</span>
+                            <span class="bus-card-plate">${escapeHtml(bus.plate)}</span>
+                            <span class="bus-card-badge ${escapeHtml(status.class)}">موقف ${escapeHtml(bus.spot)}</span>
                         </div>
                         <div class="bus-card-info">
-                            <span>${bus.flight}</span>
-                            <span>${bus.pax || '-'}</span>
+                            <span>${escapeHtml(bus.flight)}</span>
+                            <span>${escapeHtml(bus.pax) || '-'}</span>
                             <span>${status.hours.toFixed(1)} س</span>
                         </div>
                     </div>
@@ -3097,13 +3140,13 @@
             list.innerHTML = departedBuses.slice(0, 20).map(bus => `
                 <div class="bus-card completed" onclick="showFormsMenu(event, null)">
                     <div class="bus-card-header">
-                        <span class="bus-card-plate">${bus.plate}</span>
+                        <span class="bus-card-plate">${escapeHtml(bus.plate)}</span>
                         <span class="bus-card-badge completed">مكتملة</span>
                     </div>
                     <div class="bus-card-info">
-                        <span>${bus.flight}</span>
-                        <span>${bus.pax || '-'}</span>
-                        <span>${bus.gate || '-'}</span>
+                        <span>${escapeHtml(bus.flight)}</span>
+                        <span>${escapeHtml(bus.pax) || '-'}</span>
+                        <span>${escapeHtml(bus.gate) || '-'}</span>
                     </div>
                 </div>
             `).join('');
@@ -3124,7 +3167,7 @@
         function zoomReset() { setZoom(100); }
 
         function setZoom(level) {
-            zoomLevel = parseInt(level);
+            zoomLevel = parseInt(level, 10);
             document.getElementById('zoomLevel').textContent = zoomLevel + '%';
             document.getElementById('zoomSlider').value = zoomLevel;
             document.querySelector('.content-area').style.transform = `scale(${zoomLevel/100})`;
@@ -3245,8 +3288,32 @@
             // لا نحمّل بيانات تجريبية هنا - ستُحمّل في init إذا لم توجد بيانات
         }
 
+        let currentFilter = 'all'; // الفلتر الحالي
+
         function filterBuses(type) {
-            showNotification('info', 'فلترة', `عرض: ${type === 'all' ? 'الكل' : type}`);
+            currentFilter = type;
+            const typeLabels = { all: 'الكل', early: 'مبكر', ontime: 'في الموعد', late: 'متأخر' };
+            showNotification('info', 'فلترة', `عرض: ${typeLabels[type] || type}`);
+
+            // تطبيق الفلترة على المواقف المعروضة
+            document.querySelectorAll('.parking-spot').forEach(spot => {
+                if (spot.classList.contains('empty')) {
+                    spot.style.display = type === 'all' ? '' : 'none';
+                    return;
+                }
+
+                if (type === 'all') {
+                    spot.style.display = '';
+                } else if (type === 'early' && spot.classList.contains('early')) {
+                    spot.style.display = '';
+                } else if (type === 'ontime' && spot.classList.contains('ontime')) {
+                    spot.style.display = '';
+                } else if (type === 'late' && spot.classList.contains('late')) {
+                    spot.style.display = '';
+                } else {
+                    spot.style.display = 'none';
+                }
+            });
         }
 // ═══════════════ حجم المواقف ═══════════════
         let spotSize = 55;
@@ -3255,7 +3322,7 @@
         function spotSizeOut() { setSpotSize(Math.max(spotSize - 5, 40)); }
 
         function setSpotSize(size) {
-            spotSize = parseInt(size);
+            spotSize = parseInt(size, 10);
             document.getElementById('spotSizeLevel').textContent = spotSize + 'px';
             document.getElementById('spotSizeSlider').value = spotSize;
             document.querySelectorAll('.parking-spot').forEach(spot => {
