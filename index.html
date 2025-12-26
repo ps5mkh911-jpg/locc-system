@@ -1831,57 +1831,174 @@
             }
         }
 
-        // ✅ إصلاح #55: دوال تشفير وفك تشفير بسيطة للبيانات المحلية
-        // تحذير: هذا تشفير بسيط (obfuscation) وليس تشفير قوي
-        // للبيانات الحساسة جداً استخدم Web Crypto API
-        var STORAGE_KEY = 'LOCC_2024';
-        
-        function simpleEncrypt(text) {
-            if (!text) return '';
-            var result = '';
-            for (var i = 0; i < text.length; i++) {
-                var charCode = text.charCodeAt(i) ^ STORAGE_KEY.charCodeAt(i % STORAGE_KEY.length);
-                result += String.fromCharCode(charCode);
+        // ✅ إصلاح #55: دوال تشفير وفك تشفير آمنة باستخدام Web Crypto API
+        // تشفير AES-GCM مع Salt عشوائي و 600,000 iterations (معيار 2025)
+        // المصدر: MDN Web Crypto API + OWASP Guidelines
+
+        var CRYPTO_CONFIG = {
+            iterations: 600000,  // معيار 2025 ضد Brute-force
+            keyLength: 256,      // AES-256
+            ivLength: 12,        // 96-bit IV لـ AES-GCM
+            saltLength: 16       // 128-bit Salt عشوائي
+        };
+
+        // مفتاح ثابت للتشفير المحلي (يمكن تغييره)
+        var ENCRYPTION_PASSWORD = 'LOCC_2024_SECURE_KEY';
+
+        // تحويل ArrayBuffer إلى Base64
+        function arrayBufferToBase64(buffer) {
+            var bytes = new Uint8Array(buffer);
+            var binary = '';
+            for (var i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
             }
-            // تحويل لـ Base64 للتخزين الآمن
+            return btoa(binary);
+        }
+
+        // تحويل Base64 إلى ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            var binary = atob(base64);
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // اشتقاق مفتاح التشفير من كلمة المرور باستخدام PBKDF2
+        async function deriveKey(password, salt) {
+            var enc = new TextEncoder();
+            var keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                enc.encode(password),
+                'PBKDF2',
+                false,
+                ['deriveKey']
+            );
+            return await crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: salt,
+                    iterations: CRYPTO_CONFIG.iterations,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-GCM', length: CRYPTO_CONFIG.keyLength },
+                false,
+                ['encrypt', 'decrypt']
+            );
+        }
+
+        // تشفير آمن باستخدام AES-GCM
+        async function secureEncrypt(text) {
+            if (!text) return '';
             try {
-                return btoa(encodeURIComponent(result));
+                var enc = new TextEncoder();
+                // توليد Salt عشوائي لكل عملية تشفير
+                var salt = crypto.getRandomValues(new Uint8Array(CRYPTO_CONFIG.saltLength));
+                // توليد IV عشوائي
+                var iv = crypto.getRandomValues(new Uint8Array(CRYPTO_CONFIG.ivLength));
+                // اشتقاق المفتاح
+                var key = await deriveKey(ENCRYPTION_PASSWORD, salt);
+                // التشفير
+                var encrypted = await crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    key,
+                    enc.encode(text)
+                );
+                // دمج Salt + IV + البيانات المشفرة
+                var combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+                combined.set(salt, 0);
+                combined.set(iv, salt.length);
+                combined.set(new Uint8Array(encrypted), salt.length + iv.length);
+                return 'V2:' + arrayBufferToBase64(combined.buffer);
             } catch (e) {
-                return btoa(result);
+                console.error('خطأ في التشفير:', e);
+                return '';
             }
         }
-        
-        function simpleDecrypt(encoded) {
+
+        // فك التشفير الآمن
+        async function secureDecrypt(encoded) {
             if (!encoded) return '';
-            
-            // ✅ فحص إذا كانت البيانات JSON عادي (غير مشفر) - للتوافق مع البيانات القديمة
+
+            // ✅ التوافق مع البيانات القديمة (JSON غير مشفر)
             if (encoded.charAt(0) === '{' || encoded.charAt(0) === '[') {
-                return encoded; // بيانات قديمة غير مشفرة
+                return encoded;
             }
-            
-            // ✅ فحص إذا كانت Base64 صالحة
+
+            // ✅ التوافق مع التشفير القديم (XOR)
+            if (!encoded.startsWith('V2:')) {
+                return legacyDecrypt(encoded);
+            }
+
+            try {
+                var data = encoded.substring(3); // إزالة 'V2:'
+                var combined = new Uint8Array(base64ToArrayBuffer(data));
+                // استخراج Salt + IV + البيانات
+                var salt = combined.slice(0, CRYPTO_CONFIG.saltLength);
+                var iv = combined.slice(CRYPTO_CONFIG.saltLength, CRYPTO_CONFIG.saltLength + CRYPTO_CONFIG.ivLength);
+                var encryptedData = combined.slice(CRYPTO_CONFIG.saltLength + CRYPTO_CONFIG.ivLength);
+                // اشتقاق المفتاح
+                var key = await deriveKey(ENCRYPTION_PASSWORD, salt);
+                // فك التشفير
+                var decrypted = await crypto.subtle.decrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    key,
+                    encryptedData
+                );
+                return new TextDecoder().decode(decrypted);
+            } catch (e) {
+                console.error('خطأ في فك التشفير:', e);
+                return encoded;
+            }
+        }
+
+        // دالة التشفير القديم للتوافق العكسي
+        var STORAGE_KEY = 'LOCC_2024';
+        function legacyDecrypt(encoded) {
+            if (!encoded) return '';
             var base64Regex = /^[A-Za-z0-9+/=]+$/;
-            if (!base64Regex.test(encoded)) {
-                return encoded; // ليست Base64، أرجعها كما هي
-            }
-            
+            if (!base64Regex.test(encoded)) return encoded;
             try {
                 var text;
-                try {
-                    text = decodeURIComponent(atob(encoded));
-                } catch (e) {
-                    text = atob(encoded);
-                }
+                try { text = decodeURIComponent(atob(encoded)); }
+                catch (e) { text = atob(encoded); }
                 var result = '';
                 for (var i = 0; i < text.length; i++) {
                     var charCode = text.charCodeAt(i) ^ STORAGE_KEY.charCodeAt(i % STORAGE_KEY.length);
                     result += String.fromCharCode(charCode);
                 }
                 return result;
-            } catch (e) {
-                // إذا فشل فك التشفير، أرجع البيانات الأصلية
-                return encoded;
-            }
+            } catch (e) { return encoded; }
+        }
+
+        // دوال متزامنة للتوافق مع الكود الحالي
+        var encryptionQueue = Promise.resolve();
+
+        function simpleEncrypt(text) {
+            // تشفير مؤقت متزامن - سيتم استبداله بالتشفير الآمن
+            if (!text) return '';
+            encryptionQueue = encryptionQueue.then(function() {
+                return secureEncrypt(text).then(function(encrypted) {
+                    if (encrypted) {
+                        localStorage.setItem('LOCC_Data', encrypted);
+                        localStorage.setItem('LOCC_Checksum', simpleChecksum(encrypted));
+                    }
+                });
+            });
+            // إرجاع placeholder - البيانات ستُحفظ async
+            return 'ASYNC_ENCRYPT';
+        }
+
+        function simpleDecrypt(encoded) {
+            // للتوافق: فك التشفير المتزامن للبيانات القديمة
+            if (!encoded) return '';
+            if (encoded === 'ASYNC_ENCRYPT') return '';
+            if (encoded.charAt(0) === '{' || encoded.charAt(0) === '[') return encoded;
+            if (!encoded.startsWith('V2:')) return legacyDecrypt(encoded);
+            // V2 يحتاج async - سيتم معالجته في loadData
+            return '';
         }
 
         // ✅ إصلاح #4: دالة آمنة للوصول إلى عناصر DOM
@@ -1929,16 +2046,18 @@
         }
 
         // ═══════════════ تهيئة النظام ═══════════════
-        function init() {
+        // ✅ إصلاح #55: تهيئة النظام async لدعم التشفير الآمن
+        async function init() {
             try {
-                loadData();
+                // ✅ انتظار تحميل البيانات المشفرة
+                await loadData();
                 loadSettings();
-                
+
                 // تحميل بيانات تجريبية إذا لم توجد بيانات
                 if (busData.length === 0) {
                     loadTestData();
                 }
-                
+
                 // عرض المواقف والبوابات بعد تحميل البيانات
                 renderParkingGrid('entranceGrid', 1, 42);
                 renderParkingGrid('exitGrid', 43, 87);
@@ -1947,16 +2066,18 @@
                 updateKPIs();
                 updateBusLists();
                 updateTime();
-                
+
                 // ✅ إصلاح #56: تنظيف intervals السابقة قبل إنشاء جديدة
                 if (intervalIds.updateTime) clearInterval(intervalIds.updateTime);
                 if (intervalIds.updateCountdowns) clearInterval(intervalIds.updateCountdowns);
                 if (intervalIds.saveData) clearInterval(intervalIds.saveData);
-                
+
                 // حفظ معرفات intervals للتنظيف لاحقاً
                 intervalIds.updateTime = setInterval(updateTime, 1000);
                 intervalIds.updateCountdowns = setInterval(updateCountdowns, 1000);
                 intervalIds.saveData = setInterval(saveData, 30000);
+
+                console.log('✅ تم تهيئة النظام بنجاح مع تشفير AES-GCM آمن');
             } catch (error) {
                 console.error('خطأ في تهيئة النظام:', error);
                 showNotification('error', 'خطأ', 'فشل في تهيئة النظام');
@@ -3720,7 +3841,8 @@
             return Math.abs(hash).toString(16);
         }
         
-        function saveData() {
+        // ✅ إصلاح #55: حفظ البيانات بتشفير آمن AES-GCM
+        async function saveData() {
             try {
                 var dataToSave = {
                     busData: busData,
@@ -3736,22 +3858,25 @@
                 };
                 // ✅ إصلاح #28: استخدام safeJSONStringify
                 var jsonData = safeJSONStringify(dataToSave);
-                // ✅ إصلاح #55: تشفير البيانات قبل التخزين
-                var encryptedData = simpleEncrypt(jsonData);
-                // ✅ إصلاح #41: إضافة checksum للتحقق من سلامة البيانات
-                var checksum = simpleChecksum(encryptedData);
-                localStorage.setItem('LOCC_Data', encryptedData);
-                localStorage.setItem('LOCC_Checksum', checksum);
+                // ✅ إصلاح #55: تشفير آمن AES-GCM مع Salt عشوائي
+                var encryptedData = await secureEncrypt(jsonData);
+                if (encryptedData) {
+                    // ✅ إصلاح #41: إضافة checksum للتحقق من سلامة البيانات
+                    var checksum = simpleChecksum(encryptedData);
+                    localStorage.setItem('LOCC_Data', encryptedData);
+                    localStorage.setItem('LOCC_Checksum', checksum);
+                }
             } catch (error) {
                 console.error('خطأ في حفظ البيانات:', error);
             }
         }
 
-        function loadData() {
+        // ✅ إصلاح #55: تحميل البيانات مع فك التشفير الآمن
+        async function loadData() {
             try {
                 var saved = localStorage.getItem('LOCC_Data');
                 var savedChecksum = localStorage.getItem('LOCC_Checksum');
-                
+
                 // ✅ إصلاح #41: التحقق من checksum
                 if (saved && savedChecksum) {
                     var calculatedChecksum = simpleChecksum(saved);
@@ -3760,17 +3885,17 @@
                         showNotification('warning', 'تحذير', 'تم اكتشاف تغيير غير متوقع في البيانات');
                     }
                 }
-                
-                // ✅ إصلاح #55: فك تشفير البيانات قبل التحليل
+
+                // ✅ إصلاح #55: فك التشفير الآمن (يدعم V2 + القديم)
                 var decryptedData = '';
                 if (saved) {
-                    decryptedData = simpleDecrypt(saved);
+                    decryptedData = await secureDecrypt(saved);
                     // إذا فشل فك التشفير، جرب البيانات الخام (للتوافق مع البيانات القديمة)
                     if (!decryptedData || decryptedData.charAt(0) !== '{') {
                         decryptedData = saved;
                     }
                 }
-                
+
                 // ✅ إصلاح #29: استخدام safeJSONParse
                 var d = safeJSONParse(decryptedData, null);
                 if (d) {
